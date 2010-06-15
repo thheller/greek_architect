@@ -1,5 +1,5 @@
 
-module Greek
+module GreekArchitect
   class RowWrapper
     
     def initialize(client, column_family, key)
@@ -44,9 +44,9 @@ module Greek
   
   module ColumnFamilyClassMethods
     def value_type(typename, opts = {})
-      cf = Greek::column_family(self)
+      cf = GreekArchitect::column_family(self)
 
-      if gtype = Greek::greek_types.detect { |it| it.typename == typename }
+      if gtype = GreekArchitect::greek_types.detect { |it| it.typename == typename }
         cf['value_type'] = gtype.configure(opts)
       else
         raise "no such greek type: #{typename}"
@@ -54,14 +54,14 @@ module Greek
     end    
     
     def override_name(new_name)
-      cf = Greek::column_family(self)
+      cf = GreekArchitect::column_family(self)
       cf.name = new_name
     end
     
     def key(typename, opts = {})
-      cf = Greek::column_family(self)
+      cf = GreekArchitect::column_family(self)
       
-      if gtype = Greek::greek_types.detect { |it| it.typename == typename }
+      if gtype = GreekArchitect::greek_types.detect { |it| it.typename == typename }
         cf.key = gtype.configure(opts)
       else
         raise ArgumentError, "#{self}.key no such greek type: #{typename}", caller
@@ -69,9 +69,9 @@ module Greek
     end
     
     def compare_with(typename, opts = {})
-      cf = Greek::column_family(self)
+      cf = GreekArchitect::column_family(self)
       
-      if gtype = Greek::greek_types.detect { |it| it.typename == typename }
+      if gtype = GreekArchitect::greek_types.detect { |it| it.typename == typename }
         cf.compare_with = gtype.configure(opts)
       else
         raise ArgumentError, "#{self}.compare_with no such greek type: #{typename}", caller

@@ -1,4 +1,5 @@
-module Greek
+module GreekArchitect
+  
   class ColumnFamily
     def initialize(ruby_type)
       @ruby_type = ruby_type

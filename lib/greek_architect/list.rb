@@ -1,4 +1,4 @@
-module Greek
+module GreekArchitect
   class List < RowWrapper
     
     def self.inherited(klass)
@@ -7,7 +7,7 @@ module Greek
     end
     
     def value_type
-      @value_type ||= Greek::column_family(self.class)['value_type']
+      @value_type ||= GreekArchitect::column_family(self.class)['value_type']
     end
     
     def append_value(value)

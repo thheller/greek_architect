@@ -1,4 +1,4 @@
-module Greek
+module GreekArchitect
   module Types
     
     # 8 byte [sec , usec] 4 byte each

@@ -1,5 +1,5 @@
 
-module Greek
+module GreekArchitect
   module Types
     # org.apache.cassandra.db.marshal.AsciiType
     # org.apache.cassandra.db.marshal.BytesType

@@ -1,8 +1,8 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 
-describe Greek::Types::Long do
+describe GreekArchitect::Types::Long do
   before(:each) do
-    @type = Greek::Types::Long.new()
+    @type = GreekArchitect::Types::Long.new()
   end
   
   it "decoding should only accept 8 byte values" do

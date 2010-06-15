@@ -1,7 +1,7 @@
 
 require 'rubygems'
 require 'rspec'
-require File.dirname(__FILE__) + "/../lib/greek"
+require File.dirname(__FILE__) + "/../lib/greek_architect"
 
 Rspec.configure do |config|
   # == Mock Framework

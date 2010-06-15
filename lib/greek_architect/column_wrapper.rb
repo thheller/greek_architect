@@ -1,4 +1,4 @@
-module Greek
+module GreekArchitect
   
   class ColumnWrapper
     def initialize(parent, name_type, value_type)
@@ -96,7 +96,7 @@ module Greek
     end
     
     def inspect
-      "\#Greek::ColumnWrapper:#{object_id} @name=#{name.inspect} @value=#{value.inspect}>"
+      "\#GreekArchitect::ColumnWrapper:#{object_id} @name=#{name.inspect} @value=#{value.inspect}>"
     end
   end
 end

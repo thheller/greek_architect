@@ -1,7 +1,7 @@
 
 require 'simple_uuid'
 
-module Greek
+module GreekArchitect
   module Types
     
     class UUID < AbstractType

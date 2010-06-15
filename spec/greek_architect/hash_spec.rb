@@ -1,19 +1,24 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
-class SimpleHash < Greek::Hash
+class SimpleHash < GreekArchitect::Hash
+  override_name 'Ascii'
+
   key :string
-  compare_with :symbol
   
+  compare_with :symbol
+
   column :created_at, :timestamp
   column :name, :string
   column :empty, :string
 
 end
 
-describe Greek::Hash do
+describe GreekArchitect::Hash do
+  
   before(:each) do
-    @client = Greek::Client.connect('127.0.0.1:9160', 'GreekTest')
-    # Greek::inspect()
+    @client = GreekArchitect::Client.connect('127.0.0.1:9160', 'GreekTest')
+    
+    GreekArchitect::inspect()
   end
 
   def row_key
@@ -24,7 +29,7 @@ describe Greek::Hash do
     @client.mutate do
       lambda {
         @client.mutate
-      }.should raise_error(Greek::AlreadyMutating)
+      }.should raise_error(GreekArchitect::AlreadyMutating)
     end
   end
   
@@ -32,7 +37,7 @@ describe Greek::Hash do
     hash = @client.wrap(SimpleHash, row_key)
     lambda {
       hash.name = 'zilence'
-    }.should raise_error(Greek::NotMutating)
+    }.should raise_error(GreekArchitect::NotMutating)
   end
   
   it "decide if this is a problem" do

@@ -2,11 +2,11 @@ $LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
 require 'rubygems'
 require 'thrift_client'
-require 'greek/gen-rb/cassandra_constants'
-require 'greek/gen-rb/cassandra_types'
-require 'greek/gen-rb/cassandra'
+require 'greek_architect/gen-rb/cassandra_constants'
+require 'greek_architect/gen-rb/cassandra_types'
+require 'greek_architect/gen-rb/cassandra'
 
-module Greek
+module GreekArchitect
   
   class AlreadyMutating < StandardError
   end
@@ -83,17 +83,17 @@ module Greek
   end
 end
 
-require 'greek/client'
-require 'greek/column_family'
-require 'greek/row_wrapper'
-require 'greek/column_wrapper'
-require 'greek/mutation'
-require 'greek/types/abstract_type'
-require 'greek/types/numbers'
-require 'greek/types/strings'
-require 'greek/types/dates'
-require 'greek/types/complex'
-require 'greek/list'
-require 'greek/hash'
+require 'greek_architect/client'
+require 'greek_architect/column_family'
+require 'greek_architect/row_wrapper'
+require 'greek_architect/column_wrapper'
+require 'greek_architect/mutation'
+require 'greek_architect/types/abstract_type'
+require 'greek_architect/types/numbers'
+require 'greek_architect/types/strings'
+require 'greek_architect/types/dates'
+require 'greek_architect/types/complex'
+require 'greek_architect/list'
+require 'greek_architect/hash'
 
 

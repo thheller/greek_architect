@@ -1,5 +1,5 @@
 
-module Greek
+module GreekArchitect
   # represents a batch mutation
   class MutationEntry
     def initialize(column_family, key, mutation)

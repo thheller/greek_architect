@@ -1,4 +1,4 @@
-module Greek
+module GreekArchitect
   class Hash < RowWrapper
     
     def self.inherited(klass)
@@ -74,7 +74,7 @@ module Greek
   
   module HashClassMethods
     def column(key, typename, opts = {})
-      cf = Greek::column_family(self)
+      cf = GreekArchitect::column_family(self)
       
       define_method(key) do
         self[key]
@@ -84,7 +84,7 @@ module Greek
         self[key] = v
       end
       
-      if gtype = Greek::greek_types.detect { |it| it.typename == typename }
+      if gtype = GreekArchitect::greek_types.detect { |it| it.typename == typename }
         cf["column:#{key}"] = gtype.configure(opts)
         (cf["columns"] ||= []) << key
       else

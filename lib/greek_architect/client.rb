@@ -1,5 +1,5 @@
 
-module Greek
+module GreekArchitect
   class Client
     
     def self.connect(server, keyspace)
@@ -41,7 +41,8 @@ module Greek
       # TODO: decide
       # I could keep an identity map instead of creating multiple instances
       # for the same row, not sure thats useful tho and would require cleanup
-      cf = Greek::column_family(klass)
+      cf = GreekArchitect::column_family(klass)
+
       raise "#{klass} does not have a key value set! (use key :type)" if cf.key.nil?
       
       klass.new(self, cf, key)

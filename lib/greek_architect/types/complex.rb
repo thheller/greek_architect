@@ -1,6 +1,6 @@
 require 'msgpack'
 
-module Greek
+module GreekArchitect
   module Types
 
     class MsgPack < AbstractType

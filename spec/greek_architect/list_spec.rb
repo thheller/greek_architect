@@ -1,17 +1,19 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
 # list<long, int>
-class SimpleList < Greek::List
+class SimpleList < GreekArchitect::List
+  override_name 'Long'
+
   key :string
   
   compare_with :long
   value_type :int
 end
 
-describe Greek::List do
+describe GreekArchitect::List do
   before(:each) do
-    @client = Greek::Client.connect('127.0.0.1:9160', 'GreekTest')
-    # Greek::inspect()
+    @client = GreekArchitect::Client.connect('127.0.0.1:9160', 'GreekTest')
+    # GreekArchitect::inspect()
   end
 
   def row_key

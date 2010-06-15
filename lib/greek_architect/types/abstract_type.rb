@@ -1,5 +1,5 @@
 
-module Greek
+module GreekArchitect
   module Types
     class AbstractType
       def initialize(opts = {})
@@ -20,7 +20,7 @@ module Greek
     
     module ClassMethods
       def register_as(typename, fqcn = nil)
-        Greek.register_type(typename, self, fqcn)
+        GreekArchitect::register_type(typename, self, fqcn)
       end
     end
   end
