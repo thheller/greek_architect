@@ -1,5 +1,9 @@
 *.tmproj
 *.log
+
+.autotest
+autotest/*
+
 log/*
 tmp/*
 server/*

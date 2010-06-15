@@ -5,3 +5,7 @@ task :thrift do
   system("rm -rf gen-rb &&
     thrift -gen rb #{PROJECT_ROOT}/server/interface/cassandra.thrift")
 end
+
+task :find_all_files do
+  p Dir['lib/**/**.rb'].sort
+end
