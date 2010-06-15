@@ -1,7 +1,6 @@
-
 module GreekArchitect
+
   class RowWrapper
-    
     def initialize(client, column_family, key)
       @client = client
       @column_family = column_family
@@ -59,6 +58,7 @@ module GreekArchitect
     end
     
     def key(typename, opts = {})
+      
       cf = GreekArchitect::column_family(self)
       
       if gtype = GreekArchitect::greek_types.detect { |it| it.typename == typename }

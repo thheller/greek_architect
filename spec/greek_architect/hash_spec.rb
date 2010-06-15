@@ -18,7 +18,7 @@ describe GreekArchitect::Hash do
   before(:each) do
     @client = GreekArchitect::Client.connect('127.0.0.1:9160', 'GreekTest')
     
-    GreekArchitect::inspect()
+    # GreekArchitect::inspect()
   end
 
   def row_key

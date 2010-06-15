@@ -7,13 +7,12 @@ require 'greek_architect/gen-rb/cassandra_types'
 require 'greek_architect/gen-rb/cassandra'
 
 module GreekArchitect
-  
   class AlreadyMutating < StandardError
   end
   
   class NotMutating < StandardError
   end
-  
+
   class Type
     def initialize(typename, java_class, ruby_type)
       @typename = typename
@@ -54,9 +53,6 @@ module GreekArchitect
   end
 
   
-  @@greek_types = []
-  @@column_family = {}
-  
   class << self
     
     def inspect()
@@ -68,17 +64,17 @@ module GreekArchitect
     end
     
     def column_family(type)
-      @@column_family[type] ||= begin
+      (@@column_family ||= {})[type] ||= begin
         ColumnFamily.new(type)
       end
     end
     
     def register_type(typename, ruby_type, java_class)
-      @@greek_types << Type.new(typename, java_class, ruby_type)
+      (@@greek_types ||= []) << Type.new(typename, java_class, ruby_type)
     end
     
     def greek_types()
-      @@greek_types
+      (@@greek_types ||= [])
     end
   end
 end
