@@ -48,6 +48,10 @@ module GreekArchitect
     def get(column_family, key, column_path, consistency_level)    
       @thrift.get(@keyspace, column_family.key.encode(key), column_path, consistency_level)
     end
+    
+    def get_count(column_family, key, column_parent, consistency_level)
+      @thrift.get_count(@keyspace, column_family.key.encode(key), column_parent, consistency_level)
+    end
   
     def get_slice(column_family, key, column_parent, predicate, consistency_level)
       @thrift.get_slice(@keyspace, column_family.key.encode(key), column_parent, predicate, consistency_level)
@@ -68,12 +72,13 @@ module GreekArchitect
       klass.new(self, cf, key)
     end
 
-    def mutate(consistency_level = CassandraThrift::ConsistencyLevel::ONE)
+    def mutate(consistency_level, block)
       raise AlreadyMutating, 'already mutating' unless @current_mutation.nil?
 
       @current_mutation = Mutation.new(self, consistency_level)
       begin
-        yield()
+        block.call()
+        
         @current_mutation.execute!
       ensure
         @current_mutation = nil

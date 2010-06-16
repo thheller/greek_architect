@@ -3,24 +3,23 @@ require File.dirname(__FILE__) + '/user_model.rb'
 
 describe GreekArchitect::Hash do
   
-  include GreekArchitectByExample  
-  
   before(:each) do
-    GreekArchitect::connect(GreekArchitectByExample, '127.0.0.1:9160')
+    GreekArchitect::connect('GreekArchitectByExample', '127.0.0.1:9160')
   end
 
   it "should be simple to use" do
     # prepare to create a new user, since we dont wrap the row with key    
-    user = User.wrap()
+    
+    user = User.create()
+    
     user.id.should be_an_instance_of(::UUID)
     user.key.should be_an_instance_of(::UUID)
     
     # id is just an alias for key ...
     user.id.should == user.key
-    
+
     # begin our mutation
-    GreekArchitect.mutate do
-      
+    user.mutate do            
       # since we named those columns
       user.name = 'zilence'
       user.created_at = Time.now
@@ -39,12 +38,14 @@ describe GreekArchitect::Hash do
       user[:some_float] = 3.1337
     end
     
+    user.should be_present # if this fails, run the test again and read TODO!
+    user.count.should == 8 # we created 8 columns
+        
     # mutation finished, our data is now saved
     
     # we could continue using that object
-    # but we are gonna read it back
-    
-    zilence = User.wrap(user.id)
+    # but we want to read it back from cassandra    
+    zilence = User.get(user.id)
     
     # we can access via method sugar since we named them in our class
     zilence.name.should == 'zilence'

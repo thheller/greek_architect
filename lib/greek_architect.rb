@@ -76,8 +76,27 @@ module GreekArchitect
 
   
   class << self
-    def connect(app_module, server)
-      active_clients[app_module.to_s] = Client.connect(server, app_module.to_s)
+    def connect(keyspace, server)
+      if keyspace.is_a?(Class)
+        active_clients[app_module.to_s] = Client.connect(server, app_module.to_s)
+      else
+        active_clients['default'] = Client.connect(server, keyspace)
+      end
+    end
+    
+    def wrap(row_class, key)
+      # FIXME: is there no simpler way to to this?
+      if row_class.to_s =~ /(.+)::(.+)/
+        module_name = $1
+      else
+        module_name = 'default'
+      end
+      
+      if client = active_clients[module_name]
+        client.wrap(row_class, key)
+      else
+        raise "#{module_name}::#{row_class} does not have an active connection!"
+      end
     end
     
     def active_clients

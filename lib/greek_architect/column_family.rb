@@ -3,7 +3,13 @@ module GreekArchitect
   class ColumnFamily
     def initialize(ruby_type)
       @ruby_type = ruby_type
-      @name = ruby_type.to_s
+      
+      if ruby_type.to_s =~ /(.+)::(.+)/
+        @name = $2
+      else
+        @name = ruby_type.to_s
+      end
+      
       @config = {}
     end
         

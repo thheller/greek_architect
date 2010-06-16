@@ -22,8 +22,7 @@ end
 
 describe GreekArchitect::List do
   before(:each) do
-    @client = GreekArchitect::Client.connect('127.0.0.1:9160', 'GreekTest')
-    # GreekArchitect::inspect()
+    GreekArchitect::connect('GreekTest', '127.0.0.1:9160')
   end
 
   def row_key
@@ -31,9 +30,9 @@ describe GreekArchitect::List do
   end
 
   it "should keep a simple list of integers" do
-    list = @client.wrap(SimpleList, row_key)
+    list = SimpleList.get(row_key)
 
-    @client.mutate() do
+    list.mutate do
       list.insert(2, 10)
       list.insert(1, 5)
       list.insert(3, 15)
@@ -58,9 +57,8 @@ describe GreekArchitect::List do
   end
 
   it "::TimeUUID should match cassandras sorting" do
-    list = @client.wrap(SimpleUUID)
-    
-    @client.mutate do      
+    list = SimpleUUID.create()
+    list.mutate do      
       list.append_value(1)
       list.append_value(2)
       list.append_value(3)

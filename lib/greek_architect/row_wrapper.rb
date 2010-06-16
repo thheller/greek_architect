@@ -9,6 +9,19 @@ module GreekArchitect
       column_init!
     end
     
+    # you might want better consistency when checking if an object exists
+    def present?(consistency_level = nil)
+      count(consistency_level) > 0
+    end
+    
+    def count(consistency_level = nil)
+      client.get_count(column_family, key, column_parent, consistency_level || read_consistency_level)
+    end
+    
+    def mutate(write_consistency_level = CassandraThrift::ConsistencyLevel::ONE, &block)
+      client.mutate(write_consistency_level, block)
+    end
+    
     def delete_all!
       raise 'tbd'
     end
@@ -54,6 +67,14 @@ module GreekArchitect
   end
   
   module ColumnFamilyClassMethods
+    def create()
+      GreekArchitect::wrap(self, nil)
+    end
+    
+    def get(key)
+      GreekArchitect::wrap(self, key)
+    end
+    
     def value_type(typename, opts = {})
       cf = GreekArchitect::column_family(self)
 
