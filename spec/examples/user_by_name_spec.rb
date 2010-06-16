@@ -1,6 +1,27 @@
 require 'spec_helper'
 require File.dirname(__FILE__) + '/user_model.rb'
 
+
+__END__
+
+# TODO: this needs more work, thinking
+
+class UserNameIndex < GreekArchitect::Hash # will create an GreekArchitect::UniqueIndex in the future
+  key :string
+  
+  compare_with :symbol
+  column :user_id, :uuid
+  
+  def user
+    @user ||= User.get(user_id)
+  end
+
+  on_mutate(User, :name) do |user|
+    idx = UserNameIndex.get(user.name)
+    idx[:user_id] = user.key
+  end
+end
+
 describe GreekArchitect::Hash do
   
   before(:each) do
@@ -8,33 +29,6 @@ describe GreekArchitect::Hash do
   end
 
   it "example: how to access users by name" do
-    # BEWARE: HARDCORE DETAILS
-    # THIS COULD BE AUTOMATED AT SOME POINT, BUT I REALLY DO NOT LIKE MAGIC!
-
-    # Step1: create our name index
-    class UserNameIndex < GreekArchitect::Hash # will create an GreekArchitect::UniqueIndex in the future
-      key :string
-      
-      compare_with :symbol
-      column :user_id, :uuid
-    
-      def user
-        User.get(user_id)
-      end
-    end
-  
-    # Step2: write the index when writing the name
-    class User
-      alias_method :really_set_name, :name=
-
-      def name=(value)
-        really_set_name(value)
-
-        idx = UserNameIndex.get(value)
-        idx[:user_id] = self.key
-      end
-    end
-  
     zilence = User.create()
     zilence.should_not be_present
     
@@ -49,8 +43,6 @@ describe GreekArchitect::Hash do
     by_id = User.get(zilence.id)
     by_id.name.should == 'zilence'
     
-    # the index basically looks like "zilence" => { :user_id => guid_of_zilence }
-
     # IMPORTANT!
     # Bug 1: this is a UNIQUE index, that will overwrite without checking
     # Bug 2: this will not delete the old index if the name changes
