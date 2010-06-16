@@ -28,8 +28,9 @@ describe GreekArchitect::Hash do
       alias_method :really_set_name, :name=
 
       def name=(value)
-        idx = client.wrap(UserNameIndex, value)
         really_set_name(value)
+
+        idx = UserNameIndex.get(value)
         idx[:user_id] = self.key
       end
     end
@@ -43,7 +44,7 @@ describe GreekArchitect::Hash do
     end
     
     zilence.should be_present
-    zilence.count.should == 2
+    zilence.column_count.should == 2
   
     by_id = User.get(zilence.id)
     by_id.name.should == 'zilence'
@@ -55,6 +56,7 @@ describe GreekArchitect::Hash do
     # Bug 2: this will not delete the old index if the name changes
     # consider these TODOs
     by_name = UserNameIndex.get('zilence')
+    by_name.user.id.should == zilence.id
     by_name.user.name.should == 'zilence'
   end
 end
