@@ -15,8 +15,7 @@ module GreekArchitect
       end
 
       def encode(value)
-        raise(ArgumentError, "value is of SimpleUUID type: #{value.class}", caller) unless value.is_a?(SimpleUUID::UUID)
-
+        # check_type!(SimpleUUID::UUID, value)
         value.bytes
       end
     end    

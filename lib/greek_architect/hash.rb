@@ -6,11 +6,11 @@ module GreekArchitect
       klass.extend(HashClassMethods)
     end
     
-    def column_init!; super; @columns_loaded = []; @columns = {}; end
-    attr_reader :columns, :columns_loaded
+    def column_init!; super; @loaded = false; @columns_loaded = []; @columns = {}; end
+    attr_reader :columns_loaded
     
     def []=(column_name, column_value)
-      if not col = columns[column_value]
+      if not col = @columns[column_value]
         col = new_column_wrapper(column_name)
       end
       
@@ -21,12 +21,19 @@ module GreekArchitect
       end
     end
     
+    def columns
+      if not @loaded
+        load_columns()
+      end
+      
+      @columns
+    end
+    
     def [](column_name)
       if not col = columns[column_name]
-        if not col = load_columns(column_name)
-          return nil
-        end
+        return nil
       end
+      
       col.value
     end
     
@@ -45,8 +52,8 @@ module GreekArchitect
       end
     end
     
-    def load_columns(column_name)
-      if not columns_loaded.include?(column_name)
+    def load_columns()
+      if not @loaded
         # columns_to_load = column_family['columns']
         
         predicate = CassandraThrift::SlicePredicate.new(
@@ -66,20 +73,22 @@ module GreekArchitect
         
           if not value_type = column_family["column:#{name}"]
             if not value_type = column_family["value_type"]
-              raise "#{self.class} does not define a #{column_name} column and no default value_type is set"
+              raise "#{self.class} does not define a #{name} column and no default value_type is set"
             end
           end
 
-          columns[name] = col = ColumnWrapper.new(self, column_family.compare_with, value_type)
+          @columns[name] = col = ColumnWrapper.new(self, column_family.compare_with, value_type)
           col.load(it.column)
           
           columns_loaded << name
         end
         
+        @loaded = true
+        
         # columns_loaded.concat(columns_to_load)
       end
       
-      columns[column_name]
+      @columns
     end
   end
   

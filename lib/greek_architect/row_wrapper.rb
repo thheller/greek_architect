@@ -4,11 +4,19 @@ module GreekArchitect
     def initialize(client, column_family, key)
       @client = client
       @column_family = column_family
-      @key = key || generate_key
+      @key = key.nil? ? generate_key : key
 
       column_init!
     end
     
+    def wrap_key(key)
+      if key.is_a?(column_family.compare_with.greek_type.ruby_type)
+        return key
+      else
+        column_family.compare_with.decode(key)
+      end
+    end
+
     attr_reader :column_family, :key
     
     def generate_key
