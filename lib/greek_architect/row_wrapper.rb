@@ -10,11 +10,13 @@ module GreekArchitect
     end
     
     # you might want better consistency when checking if an object exists
-    def present?(consistency_level = nil)
-      count(consistency_level) > 0
+    def exists?(consistency_level = nil)
+      column_count(consistency_level) > 0
     end
     
-    def count(consistency_level = nil)
+    alias_method :present?, :exists?
+    
+    def column_count(consistency_level = nil)
       client.get_count(column_family, key, column_parent, consistency_level || read_consistency_level)
     end
     

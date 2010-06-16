@@ -8,10 +8,9 @@ describe GreekArchitect::Hash do
   end
 
   it "should be simple to use" do
-    # prepare to create a new user, since we dont wrap the row with key    
-    
+
     user = User.create()
-    
+    # the key is ALWAYS generated, there is never a time where user.id is nil!
     user.id.should be_an_instance_of(::UUID)
     user.key.should be_an_instance_of(::UUID)
     
@@ -19,7 +18,8 @@ describe GreekArchitect::Hash do
     user.id.should == user.key
     
     # begin our mutation
-    user.mutate do            
+    user.mutate do
+      
       # since we named those columns
       user.name = 'zilence'
       user.created_at = Time.now
@@ -37,16 +37,18 @@ describe GreekArchitect::Hash do
       user[:some_int] = 1337
       user[:some_float] = 3.1337
     end
+
+    # mutation finished, our data is now saved, lets see
+    user.should be_present # aka user.present? / user.exists?
     
-    user.should be_present # if this fails, run the test again and read TODO!
-    user.count.should == 8 # we created 8 columns
+    # how do we know that? the row has > 0 columns
+    user.column_count.should == 8 # we created 8 columns
     
     # note that every modification MUST happen inside a mutate block!
     lambda {
       user.name = 'fail'
     }.should raise_error(GreekArchitect::NotMutating)
-        
-    # mutation finished, our data is now saved
+
     
     # we could continue using that object
     # but we want to read it back from cassandra    
