@@ -9,11 +9,7 @@ module GreekArchitect
     end
     
     attr_reader :column_family, :key, :mutation
-    
-    def key_raw()
-      column_family.key.encode(@key)
-    end
-    
+
     def inspect
       %{\#<MutationEntry:#{object_id}
         @column_family=#{@column_family.name.inspect}
@@ -42,7 +38,7 @@ module GreekArchitect
       mutation_map = {}
       
       @mutations.each do |it|
-        x = mutation_map[it.key_raw] ||= {}
+        x = mutation_map[it.key.to_s] ||= {}
         y = x[it.column_family.name] ||= []
         y << it.mutation
       end

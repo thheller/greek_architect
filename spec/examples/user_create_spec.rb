@@ -17,7 +17,7 @@ describe GreekArchitect::Hash do
     
     # id is just an alias for key ...
     user.id.should == user.key
-
+    
     # begin our mutation
     user.mutate do            
       # since we named those columns
@@ -25,7 +25,7 @@ describe GreekArchitect::Hash do
       user.created_at = Time.now
       
       # set the value for an unnamed column
-      # its messagepack'd so through some complex values in there
+      # its messagepack'd so throw some complex values in there
       user[:some_array] = [1,2,3,4,5]
       
       # FIXME: would like to use symbol keys in those hashes to
@@ -40,6 +40,11 @@ describe GreekArchitect::Hash do
     
     user.should be_present # if this fails, run the test again and read TODO!
     user.count.should == 8 # we created 8 columns
+    
+    # note that every modification MUST happen inside a mutate block!
+    lambda {
+      user.name = 'fail'
+    }.should raise_error(GreekArchitect::NotMutating)
         
     # mutation finished, our data is now saved
     

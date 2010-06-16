@@ -34,6 +34,10 @@ class User < GreekArchitect::Hash
   # aka when inserting Int/Time/String we get Int/Time/String back!
   value_type :msgpack
 
+  # BEWARE THIS IS DANGEROUS!!!
+  # its also totally awesome ;)
+  # TODO: explain
+  
   # alternatives, I choose msgpack because its is more compact and faster
   # value_type :json
   # value_type :string

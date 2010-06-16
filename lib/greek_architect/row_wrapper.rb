@@ -25,14 +25,6 @@ module GreekArchitect
     def delete_all!
       raise 'tbd'
     end
-    
-    def wrap_key(key)
-      if key.is_a?(column_family.compare_with.greek_type.ruby_type)
-        return key
-      else
-        column_family.compare_with.decode(key)
-      end
-    end
 
     attr_reader :column_family, :key
     

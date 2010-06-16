@@ -14,6 +14,7 @@ describe GreekArchitect::Hash do
     # Step1: create our name index
     class UserNameIndex < GreekArchitect::Hash # will create an GreekArchitect::UniqueIndex in the future
       key :string
+      
       compare_with :symbol
       column :user_id, :uuid
     
@@ -41,7 +42,7 @@ describe GreekArchitect::Hash do
       zilence.created_at = Time.now
     end
     
-    zilence.should be_present # if this fails, run the test again and read TODO!
+    zilence.should be_present
     zilence.count.should == 2
   
     by_id = User.get(zilence.id)

@@ -46,15 +46,16 @@ module GreekArchitect
     end
     
     def get(column_family, key, column_path, consistency_level)    
-      @thrift.get(@keyspace, column_family.key.encode(key), column_path, consistency_level)
+      # for 0.7 we should use column_family.key.encode(key) so we use binary keys
+      @thrift.get(@keyspace, key.to_s, column_path, consistency_level)
     end
     
     def get_count(column_family, key, column_parent, consistency_level)
-      @thrift.get_count(@keyspace, column_family.key.encode(key), column_parent, consistency_level)
+      @thrift.get_count(@keyspace, key.to_s, column_parent, consistency_level)
     end
   
     def get_slice(column_family, key, column_parent, predicate, consistency_level)
-      @thrift.get_slice(@keyspace, column_family.key.encode(key), column_parent, predicate, consistency_level)
+      @thrift.get_slice(@keyspace, key.to_s, column_parent, predicate, consistency_level)
     end
     
     def batch_mutate(mutation, consistency_level)
