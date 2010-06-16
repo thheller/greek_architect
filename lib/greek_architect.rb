@@ -23,6 +23,7 @@ $LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
 require 'rubygems'
 require 'thrift_client'
+require 'uuid'
 require 'greek_architect/gen-rb/cassandra_constants'
 require 'greek_architect/gen-rb/cassandra_types'
 require 'greek_architect/gen-rb/cassandra'
@@ -75,14 +76,15 @@ module GreekArchitect
 
   
   class << self
-    
-    def inspect()
-      puts '--- GREEK COLUMN FAMILIES'
-      pp @@column_family
-
-      puts '--- GREEK TYPES'
-      pp @@greek_types
+    def connect(app_module, server)
+      active_clients[app_module.to_s] = Client.connect(server, app_module.to_s)
     end
+    
+    def active_clients
+      @@active_clients ||= {}
+    end
+
+
     
     def column_family(type)
       (@@column_family ||= {})[type] ||= begin
@@ -99,6 +101,7 @@ module GreekArchitect
     end
   end
 end
+
 
 require 'greek_architect/client'
 require 'greek_architect/column_family'

@@ -1,5 +1,6 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
+
 # list<long, int>
 class SimpleList < GreekArchitect::List
   override_name 'Long'
@@ -7,6 +8,15 @@ class SimpleList < GreekArchitect::List
   key :string
   
   compare_with :long
+  value_type :int
+end
+
+class SimpleUUID < GreekArchitect::List
+  override_name 'TimeUUID'
+  
+  key :guid
+  
+  compare_with :time_uuid
   value_type :int
 end
 
@@ -47,4 +57,19 @@ describe GreekArchitect::List do
     slice[0].value.should == 10
   end
 
+  it "::TimeUUID should match cassandras sorting" do
+    list = @client.wrap(SimpleUUID)
+    
+    @client.mutate do      
+      list.append_value(1)
+      list.append_value(2)
+      list.append_value(3)
+      list.append_value(4)
+      list.append_value(5)
+    end
+
+    result = list.slice().collect { |col| col.value  }
+    
+    result.should == [1,2,3,4,5]
+  end
 end

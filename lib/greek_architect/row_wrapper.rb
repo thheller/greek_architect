@@ -9,6 +9,10 @@ module GreekArchitect
       column_init!
     end
     
+    def delete_all!
+      raise 'tbd'
+    end
+    
     def wrap_key(key)
       if key.is_a?(column_family.compare_with.greek_type.ruby_type)
         return key

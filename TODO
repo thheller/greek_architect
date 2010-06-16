@@ -1,0 +1,14 @@
+
+h1. failing specs
+
+for some reason some testcases will fail SOMETIMES when reading back the results they wrote
+
+I'm using ONE/ONE for read/write consistency
+and I'm under the impression that should equal "read my writes"
+but maybe not, need to check
+
+usually just rerunning the test will pass but sometimes it takes
+a couple more attempts which is rather annoying
+
+need to investigate
+

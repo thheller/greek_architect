@@ -1,6 +1,4 @@
 
-require 'simple_uuid'
-
 module GreekArchitect
   module Types
     
