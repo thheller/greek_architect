@@ -1,1 +1,10 @@
 so not ready for the public yet!
+
+well, actually it is "usable" if you are very brave.
+
+check:
+
+spec/examples/user_model.rb
+spec/examples/user_create_spec.rb
+
+NEVER USE IT TO ACCESS ANYTHING ACTUALLY IMPORTANT!

@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "greek_architect"
-  s.version = "0.0.1"
+  s.version = "0.1.0"
   s.date = "2010-06-15"
   s.authors = ["Thomas Heller"]
   s.email = "info@zilence.net"

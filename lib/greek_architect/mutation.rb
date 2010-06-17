@@ -58,7 +58,7 @@ module GreekArchitect
       # attempts = 0
       # pp @mutations
       
-      puts "mutating #{@mutations.length} entries"
+      # puts "mutating #{@mutations.length} entries"
       
       # begin
       @client.batch_mutate(mutation_map, consistency_level)      

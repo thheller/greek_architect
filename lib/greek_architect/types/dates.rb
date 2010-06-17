@@ -5,6 +5,10 @@ module GreekArchitect
     class Timestamp < AbstractType
       register_as :timestamp
       
+      def new_instance()
+        Time.now
+      end
+      
       def decode(bytes)
         Time.at(*bytes.unpack('N2'))
       end
