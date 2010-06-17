@@ -58,15 +58,8 @@ module GreekArchitect
     end
 
     def insert(name, value, timestamp = nil)
-      client.current_mutation.append(column_family, key, CassandraThrift::Mutation.new(
-        :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
-          :column => CassandraThrift::Column.new(
-            :name => column_family.compare_with.encode(name),
-            :value => value_type.encode(value),
-            :timestamp => timestamp || client.timestamp
-          )
-        )
-      ))
+      wrapper = ColumnWrapper.new(self, column_family.compare_with, value_type)
+      wrapper.create(name, value, timestamp)
     end
   end
   
