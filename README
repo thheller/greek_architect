@@ -1,16 +1,37 @@
-This is currently in a very early alpha Stage!!!
+Consider this a learning-experiment.
 
-USE IT AT YOUR OWN RISK!
-NEVER USE IT TO ACCESS/WRITE ANYTHING ACTUALLY IMPORTANT!
+I do consider BigTable-like Databases (Cassandra, HBase, etc) to be the future
+and I want to be ready for it. More importantly the sooner I can move away
+from SQL myself the better. There are some very valid use-cases for SQL
+and I'll most certainly continue using it for certain parts of my Applications
+(parts that NEED to have ACID).
 
-It is full of bugs and requires alot more test, so I do not consider this
-stable, also the API changes about every other day.
+However, there are alot of areas where Data Structures possible with "NoSQL"
+are a lot more powerful even when working with smaller datasets that dont
+go into the TBs. SQL Schemas are just to restrictive sometimes. Plus almost
+unlimited scalability is always nice. ;)
 
 -------
+
+Anyways, at this point I dont recommend using this anywhere, since the API
+changes about every time I have time to think about it. Also since thinking
+about this Stuff is NOT my Job, the time I put into it is very limited.
 
 That being said, if you really want to see what this is about I suggest
 looking at the examples, since this is what I wanted to do and designed
 this library arround.
+
+
+2010-06-20:
+Had an idea for a slightly modifed abstraction to better mirror the underlying
+data model of rows/columns.
+
+Next Gen might look a little like this:
+- research/better_abstraction.rb
+
+
+2010-06-14:
+Attempted to come up with a first abstract and this is what I came up with
 
 Step #1: Insert a very basic User Model into Cassandra
 
