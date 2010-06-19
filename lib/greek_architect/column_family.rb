@@ -1,27 +1,25 @@
 module GreekArchitect
   
   class ColumnFamily
-    def initialize(ruby_type)
-      @ruby_type = ruby_type
-      
-      if ruby_type.to_s =~ /(.+)::(.+)/
-        @name = $2
-      else
-        @name = ruby_type.to_s
-      end
-      
-      @config = {}
+    def initialize(name)
+      @name = name
+      @named_columns = {}
+      @observers = {}
     end
         
-    attr_reader :ruby_type
-    attr_accessor :compare_with, :name, :key
+    attr_reader :ruby_type, :named_columns
+    attr_accessor :compare_with, :name, :key, :value_type
     
-    def []=(k, v)
-      @config[k] = v
+    def register_observer(column_name, callback)
+      (@observers[column_name] ||= []) << callback
     end
     
-    def [](k)
-      @config[k]
+    def each_observer(column_name)
+      if list = @observers[column_name]
+        list.each do |callback|
+          yield(callback)
+        end
+      end
     end
   end
 end

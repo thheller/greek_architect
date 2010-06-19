@@ -1,21 +1,25 @@
 
 module GreekArchitect
-  # represents a batch mutation
-  class MutationEntry
-    def initialize(column_family, key, mutation)
-      @column_family = column_family
-      @key = key
-      @mutation = mutation
+
+  class ColumnMutation
+    def initialize(action, column)
+      @action = action
+      @column = column
     end
     
-    attr_reader :column_family, :key, :mutation
-
-    def inspect
-      %{\#<MutationEntry:#{object_id}
-        @column_family=#{@column_family.name.inspect}
-        @key=#{@key.inspect}
-        @mutation=#{@mutation.inspect}>}
+    def row
+      @column.row
     end
+    
+    def insert?
+      action == :insert
+    end
+    
+    def delete?
+      action == :delete
+    end
+    
+    attr_reader :action, :column
   end
 
   class Mutation
@@ -23,50 +27,36 @@ module GreekArchitect
       @client = client
       @mutations = []
       @consistency_level = consistency_level
-      # @max_attempts = 1
     end
-        
+            
     attr_reader :consistency_level
     
-    def append(cf, key, mutation)
-      raise "need column family to append, got #{cf.class}" unless cf.is_a?(ColumnFamily)
-      
-      @mutations << MutationEntry.new(cf, key, mutation)
+    def append_insert(column)
+      @mutations << ColumnMutation.new(:insert, column)
     end
     
-    def generate_mutation_map()
-      mutation_map = {}
-      
-      @mutations.each do |it|
-        x = mutation_map[it.key.to_s] ||= {}
-        y = x[it.column_family.name] ||= []
-        y << it.mutation
-      end
-      
-      mutation_map
+    def append_delete(column)
+      @mutations << ColumnMutation.new(:delete, column)
     end
 
     def execute!
-      # TODO: automatic retry should something fail
-      # TODO: if it fails permanently we could log the mutations for debug purposes
-      # but honestly everything that goes into a mutation SHOULD be checked anyways
-      # so the only failures would be node down and such
-      # which should be fine after retrying another node
+      if @mutations.empty?
+        return
+      end
       
-      mutation_map = generate_mutation_map()
+      # this is a VERY naive implementation
+      # it WILL result in an infinite loop when try to mutate the column you were watching!
       
-      # attempts = 0
-      # pp @mutations
+      # FIXME: move to a stack/phase based approach
+      @mutations.each do |mutation|
+        column_name = mutation.column.name
+        column_family = mutation.column.column_family
+        column_family.each_observer(column_name) do |obs|
+          obs.call(mutation)
+        end        
+      end
       
-      # puts "mutating #{@mutations.length} entries"
-      
-      # begin
-      @client.batch_mutate(mutation_map, consistency_level)      
-      # rescue
-        # raise if attempts > @max_attempts
-        # inc attempts
-        # retry
-      # end
+      @client.batch_mutate(@mutations, consistency_level)      
     end
   end
 end

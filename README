@@ -1,10 +1,78 @@
-so not ready for the public yet!
+This is currently in a very early alpha Stage!!!
 
-well, actually it is "usable" if you are very brave.
+USE IT AT YOUR OWN RISK!
+NEVER USE IT TO ACCESS/WRITE ANYTHING ACTUALLY IMPORTANT!
 
-check:
+It is full of bugs and requires alot more test, so I do not consider this
+stable, also the API changes about every other day.
 
-spec/examples/user_model.rb
-spec/examples/user_create_spec.rb
+-------
 
-NEVER USE IT TO ACCESS ANYTHING ACTUALLY IMPORTANT!
+That being said, if you really want to see what this is about I suggest
+looking at the examples, since this is what I wanted to do and designed
+this library arround.
+
+Step #1: Insert a very basic User Model into Cassandra
+
+Start with the usage example:
+ - spec/examples/user_create_spec.rb
+then look at 
+ - spec/examples/user_model.rb
+to see the actual User Model implementation.
+
+
+Step #2: Index Users by Name
+ - spec/examples/user_name_index_spec.rb
+ - spec/examples/user_name_index_model.rb
+
+
+Step #3: Index created Users partitioned by Date
+  - you know where ...
+  
+
+-------
+
+If you actually want to run those examples to see that it IS actually working
+you'll need the following:
+
+A running Cassandra instance at '127.0.0.1:9160' with a proper KeySpace:
+
+I'm not gonna cover installing cassandra,
+
+Keyspace should look like:
+
+<Keyspace Name="GreekArchitectByExample">
+    <ColumnFamily CompareWith="AsciiType" Name="User" />
+    <ColumnFamily CompareWith="UTF8Type" Name="UserNameIndex" />
+    <ColumnFamily CompareWith="TimeUUIDType" Name="UserListIndex" />
+
+    <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
+    <ReplicationFactor>1</ReplicationFactor>
+    <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
+</Keyspace>
+
+
+Ruby Gems and this lib (no gem release yet):
+
+gem install msgpack
+gem install json
+gem install thrift_client
+gem install rspec --pre
+
+git clone git://github.com/thheller/greek_architect.git
+cd greek_architect
+rspec spec
+
+and hope for something like:
+
+Finished in 0.36562 seconds
+8 examples, 0 failures
+
+;)
+
+
+
+About the Name:
+Greek Architects used a lot of Columns to build some impressive Structures
+and so does Cassandra (muhahahah ...)
+

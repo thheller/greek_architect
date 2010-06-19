@@ -1,16 +1,4 @@
 
-"""
-A GreekArchitect::Hash desribes a data structure which closely resembles a Hash! orly :P
-
-Behaviour is this (for now):
-
-Lazy loading ALL columns for a row when ANY column is accessed
-
-This implies that you only want to use this if its ok to load
-the entire row into memory and transport it from the server to the
-client whenever you access it.
-
-"""
 # to make this work you need a ColumnFamily named User in Cassandra
 
 # CompareWith=AsciiType/BytesType/UTF8Type (Ascii should do fine)

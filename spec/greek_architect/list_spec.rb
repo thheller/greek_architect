@@ -71,3 +71,41 @@ describe GreekArchitect::List do
     result.should == [1,2,3,4,5]
   end
 end
+
+describe GreekArchitect::List, 'without sugar' do
+  
+  it "should also work without using anything 'global'" do
+
+    column_family = GreekArchitect::ColumnFamily.new('Long')
+    column_family.key = GreekArchitect::Types::String.new({})
+    column_family.compare_with = GreekArchitect::Types::Long.new({})
+    column_family.value_type = GreekArchitect::Types::Integer.new({})
+    
+    client = GreekArchitect::Client.connect('127.0.0.1:9160', 'GreekTest')
+    
+    list = client.wrap(column_family, 'some random row')
+
+    list.mutate do
+      list.insert(2, 10)
+      list.insert(1, 5)
+      list.insert(3, 15)
+    end
+    
+    # inserted values should be sorted by cassandra
+    
+    slice = list.slice(:count => 2)
+    slice.length.should == 2
+    
+    slice[0].name.should == 1
+    slice[0].value.should == 5
+    
+    slice[1].name.should == 2
+    slice[1].value.should == 10
+
+    slice = list.slice(:start => 2, :count => 1)
+    slice.length.should == 1
+    
+    slice[0].name.should == 2
+    slice[0].value.should == 10    
+  end
+end

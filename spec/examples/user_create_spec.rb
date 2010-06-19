@@ -8,9 +8,9 @@ describe GreekArchitect::Hash do
   end
 
   it "should be simple to use" do
-
+    
     user = User.create()
-    # the key is ALWAYS generated, there is never a time where user.id is nil!
+    # the key is ALWAYS generated, user.id is never nil!
     user.id.should be_an_instance_of(::UUID)
     user.key.should be_an_instance_of(::UUID)
     
@@ -19,14 +19,14 @@ describe GreekArchitect::Hash do
     
     # begin our mutation
     user.mutate do
-      
-      # since we named those columns
+      # named column sugar
       user.name = 'zilence'
       user.created_at = Time.now
       
       # set the value for an unnamed column
-      # its messagepack'd so throw some complex values in there
-      user[:some_array] = [1,2,3,4,5]
+      # its messagepack'd so throw some random values in there
+      user[:some_array] = [1,2,3,4,5,true,false,{ "o'rly" => "yarly" },"no wai"]
+      # not I usually do not build arrays like that ;)
       
       # FIXME: would like to use symbol keys in those hashes to
       # but msgpack/json do not differentiate between symbols/string so we are at their mercy
@@ -40,8 +40,6 @@ describe GreekArchitect::Hash do
 
     # mutation finished, our data is now saved, lets see
     user.should be_present # aka user.present? / user.exists?
-    
-    # how do we know that? the row has > 0 columns
     user.column_count.should == 8 # we created 8 columns
     
     # note that every modification MUST happen inside a mutate block!
@@ -53,25 +51,22 @@ describe GreekArchitect::Hash do
     # we could continue using that object
     # but we want to read it back from cassandra    
     zilence = User.get(user.id)
-    
-    # we can access via method sugar since we named them in our class
     zilence.name.should == 'zilence'
     zilence.created_at.should == user.created_at
-    
-    # those arent named, so hash access only
-    zilence[:some_array].should == [1,2,3,4,5]
+
+    zilence[:some_array].should == [1,2,3,4,5,true,false,{ "o'rly" => "yarly" },"no wai"]
     zilence[:some_hash].should == { 'hello' => 'world' }
     zilence[:other_hash].should == { 'wicked' => true }
     zilence[:some_string].should == 'hi there'
     zilence[:some_int].should == 1337
     zilence[:some_float].should == 3.1337
     
-    # since GreekArchitect just acts as a wrapper arround the CassandraThrift API
+    # we can also access the columns directly (also includes timestamp)
     # we even get access to the timestamp values (even if hidden a little)
-    
-    zilence.columns[:some_array].value.should == [1,2,3,4,5]
-    zilence.columns[:some_array].name.should == :some_array
-    zilence.columns[:some_array].timestamp.should < Time.now # hope some usecs have passed ;)
+
+    zilence.columns[:name].value.should == 'zilence'
+    zilence.columns[:name].name.should == :name
+    zilence.columns[:name].timestamp.should > 0
     
     # if you want the raw values (as they are stored in cassandra aka msgpack binaries)
     # zilence.columns[:some_array].value_raw

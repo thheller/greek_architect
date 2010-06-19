@@ -3,11 +3,12 @@ just about everything!
 
 Need to investigate:
 
-RAILS AUTOLOADING
+CLASS AUTOLOADING (aka auto-require)
 
-I'm pretty sure any kind of rails like auto loading will screw this up big time.
+I'm pretty sure any kind of auto loading (rails) will screw this up big time.
 
-Configuration happens at class definition time and is stored in the GreekArchitect module (which will be refactored at some point) and autoloading probably causes duplicate values and the like.
+Configuration happens at class definition time and is stored in the GreekArchitect module (which will be refactored at some point) and autoloading probably causes duplicate values and the like. So dont use it within anything that does auto-loading!
+
 
 SUPER COLUMNS
 

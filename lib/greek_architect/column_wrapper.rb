@@ -1,102 +1,116 @@
 module GreekArchitect
   
   class ColumnWrapper
-    def initialize(parent, name_type, value_type)
-      @parent = parent
-      @name_type = name_type
-      @value_type = value_type
+    def initialize(client, row)
+      @client = client
+      @row = row
+      
+      @name = nil
+      @value = nil
+      
+      @name_raw = nil
+      @value_raw = nil
+      @timestamp = nil
+      
+      @name_type = row.column_family.compare_with
     end
     
-    attr_reader :parent, :name_type, :value_type
+    def column_family
+      @row.column_family
+    end
     
-    def load(col)
-      @column = col
+    attr_reader :client, :row
+    
+    def init_with_name(name)
+      @name = name
+    end
+    
+    def load_raw_values(name, value, timestamp)
+      @name_raw = name
+      @value_raw = value
+      @timestamp = timestamp
       
       self
     end
     
-    def new_column(name, value, timestamp)
-      @column = CassandraThrift::Column.new(
-        :name => name_type.encode(name),
-        :value => value_type.encode(value),
-        :timestamp => timestamp || parent.client.timestamp
-      )      
-    end
-    
     def create(name, value, timestamp = nil)
-      raise(ArgumentError, "already have a column?") if not @column.nil?
-      
-      new_column(name, value, timestamp)
-      
-      @parent.client.current_mutation.append(@parent.column_family, @parent.key, CassandraThrift::Mutation.new(
-        :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
-          :column => @column
-        )
-      ))    
+      @name = name
+      @value = value
+      @timestamp = timestamp
+            
+      parent.client.current_mutation.append_update(self)
       
       self
     end
     
     def delete!
-      predicate = CassandraThrift::SlicePredicate.new(
-        :column_names => [@column.name]
-      )
+      #predicate = CassandraThrift::SlicePredicate.new(
+      #  :column_names => [@column.name]
+      #)
+      #
+      #@parent.client.current_mutation.append(
+      #  @parent.column_family,
+      #  @parent.key,
+      #  CassandraThrift::Mutation.new(
+      #    :deletion => CassandraThrift::Deletion.new(
+      #      :timestamp => @parent.client.timestamp,
+      #      :predicate => predicate
+      #    ))      
+      #)
       
-      @parent.client.current_mutation.append(
-        @parent.column_family,
-        @parent.key,
-        CassandraThrift::Mutation.new(
-          :deletion => CassandraThrift::Deletion.new(
-            :timestamp => @parent.client.timestamp,
-            :predicate => predicate
-          ))      
-      )
-      
-      @parent.remove_column(self)
+      @client.current_mutation.append_delete(self)
     end
     
-    def update(name, value, timestamp = nil)
+    def insert(value, timestamp = nil)
+      @previous_value = self.value
+      
       @value = value
-      if @column.nil?
-        new_column(name, value, timestamp)        
-      else
-        @column.value = @value_type.encode(value)
-        @column.timestamp = timestamp || @parent.client.timestamp
-      end
+      @value_raw = value_type.encode(value)
+      
+      @timestamp = timestamp if timestamp
 
-      @parent.client.current_mutation.append(@parent.column_family, @parent.key, CassandraThrift::Mutation.new(
-        :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
-          :column => @column
-        )
-      ))
+      @client.current_mutation.append_insert(self)
+
+      
+      self
     end
   
     def name
-      @name ||= @name_type.decode(@column.name)
+      raise 'no name supplied' unless (@name or @name_raw)
+      @name ||= @name_type.decode(@name_raw)
     end
     
     def name_raw
-      @column.name
+      raise 'no name supplied' unless (@name or @name_raw)
+      @name_raw ||= @name_type.encode(@name)
+    end
+    
+    def value_type
+      @value_type ||= begin
+        v = (row.column_family.named_columns[name] || row.column_family.value_type)
+        raise "could not find proper value type for #{row.column_family.name}" unless v
+        v
+      end
     end
   
     def value
-      @value ||= @value_type.decode(@column.value)
+      @value ||= (@value_raw.nil? ? nil : value_type.decode(@value_raw))
     end
     
     def value_raw
-      @column.value
-    end
-  
-    def timestamp
-      @timestamp ||= Time.at(@column.timestamp / 1000000)
+      @value_raw ||= (@value.nil? ? nil : value_type.encode(@value))
     end
     
-    def timestamp_raw
-      @column.timestamp
+    def previous_value
+      @previous_value
+    end
+    
+    def timestamp
+      @timestamp
     end
     
     def inspect
-      "\#GreekArchitect::ColumnWrapper:#{object_id} @name=#{name.inspect} @value=#{value.inspect}>"
+      "<GreekArchitect::ColumnWrapper:#{object_id} @row=#{row.key.to_s.inspect} @name=#{name.inspect} @value=#{value.inspect}>"
     end
   end
 end

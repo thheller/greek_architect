@@ -82,10 +82,9 @@ module GreekArchitect
       else
         active_clients['default'] = Client.connect(server, keyspace)
       end
-      
     end
     
-    def wrap(row_class, key)
+    def get_active_client(row_class)
       # FIXME: is there no simpler way to to this?
       if row_class.to_s =~ /(.+)::(.+)/
         module_name = $1
@@ -94,23 +93,36 @@ module GreekArchitect
       end
       
       if client = active_clients[module_name]
-        client.wrap(row_class, key)
+        return client
       else
-        pp active_clients
-        
         raise "#{module_name}::#{row_class} does not have an active connection!"
       end
+    end
+
+    def wrap(row_class, key)
+      get_active_client(row_class).wrap(row_class, key)
     end
     
     def active_clients
       @@active_clients ||= {}
     end
 
+    def type_by_name(typename)
+      if not x = greek_types.detect { |it| it.typename == typename }
+        raise ArgumentError, "#{self}.key no such greek type: #{typename}", caller
+      end
+      x
+    end
 
     
     def column_family(type)
       (@@column_family ||= {})[type] ||= begin
-        ColumnFamily.new(type)
+        column_family_name = if type.to_s =~ /(.+)::(.+)/
+          $2
+        else
+          type.to_s
+        end        
+        ColumnFamily.new(column_family_name)
       end
     end
     
