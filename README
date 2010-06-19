@@ -43,7 +43,7 @@ Keyspace should look like:
 
 <Keyspace Name="GreekArchitectByExample">
     <ColumnFamily CompareWith="AsciiType" Name="User" />
-    <ColumnFamily CompareWith="UTF8Type" Name="UserNameIndex" />
+    <ColumnFamily CompareWith="AsciiType" Name="UserNameIndex" />
     <ColumnFamily CompareWith="TimeUUIDType" Name="UserListIndex" />
 
     <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
