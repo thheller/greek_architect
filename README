@@ -51,6 +51,7 @@ Keyspace should look like:
     <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
 </Keyspace>
 
+(only tested against 0.6.2!)
 
 Ruby Gems and this lib (no gem release yet):
 
