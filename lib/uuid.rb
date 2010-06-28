@@ -275,6 +275,10 @@ class UUID
 		return v if (1..5).include? v
 		return nil
 	end
+	
+	def inspect
+	 "<UUIDv#{version} #{guid}>"
+	end
 
 	# Two  UUIDs  are  said  to  be  equal if  and  only  if  their  (byte-order
 	# canonicalized) integer representations are equivallent.  Refer RFC4122 for

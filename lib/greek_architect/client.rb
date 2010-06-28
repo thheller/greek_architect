@@ -49,7 +49,7 @@ module GreekArchitect
     
     def initialize(thrift, keyspace)
       @thrift = thrift
-      # @thrift = Spy.new(@thrift)
+      @thrift = Spy.new(@thrift)
       @keyspace = keyspace
       @current_mutation = nil
     end
@@ -63,8 +63,12 @@ module GreekArchitect
     end   
     
     def read_consistency_level
-      CassandraThrift::ConsistencyLevel::ONE
+      :one
     end    
+    
+    def translate_consistency_level(value)
+      CassandraThrift::ConsistencyLevel::ONE
+    end
     
     def get(row, column_name, consistency_level)    
       # for 0.7 we should use column_family.key.encode(key) so we use binary keys
@@ -73,7 +77,7 @@ module GreekArchitect
         :column => row.column_family.compare_with.encode(column_name)
       )
       
-      @thrift.get(@keyspace, row.key.to_s, column_path, consistency_level || read_consistency_level)
+      @thrift.get(@keyspace, row.key.to_s, column_path, translate_consistency_level(consistency_level || read_consistency_level))
     end
     
     def get_count(column_family, key, consistency_level)
@@ -81,26 +85,26 @@ module GreekArchitect
         @keyspace,
         key.to_s,
         CassandraThrift::ColumnParent.new(:column_family => column_family.name),
-        consistency_level || read_consistency_level)
+        translate_consistency_level(consistency_level || read_consistency_level))
     end
   
-    def get_slice(row, opts)
+    def get_slice(row, column_family, opts)
       start = if x = opts[:start]
-        row.column_family.compare_with.encode(x)
+        column_family.compare_with.encode(x)
       else
         ''
       end
       
       finish = if x = opts[:finish]
-        row.column_family.compare_with.encode(x)
+        column_family.compare_with.encode(x)
       else
         ''
       end
       
-      consistency_level = opts[:consistency] || read_consistency_level
+      consistency_level = translate_consistency_level(opts[:consistency] || read_consistency_level)
       
       column_parent = CassandraThrift::ColumnParent.new(
-        :column_family => row.column_family.name
+        :column_family => column_family.cassandra_name
       )
       
       predicate = CassandraThrift::SlicePredicate.new(
@@ -108,18 +112,16 @@ module GreekArchitect
           :start => start,
           :finish => finish,
           :reversed => opts[:reversed] || false,
-          :count => opts[:count] || 1000 # TODO: whats a reasonable default here?
+          :count => opts[:count] || 100 # TODO: whats a reasonable default here?
         )
       )
       
-      @thrift.get_slice(@keyspace, row.key.to_s, column_parent, predicate, consistency_level).collect do |it|
-        ColumnWrapper.new(self, row).load_raw_values(it.column.name, it.column.value, it.column.value)
-      end
+      @thrift.get_slice(@keyspace, row.key.to_s, column_parent, predicate, consistency_level)
     end
     
     def batch_mutate(mutations, consistency_level)
       mutation_map = generate_mutation_map(mutations)
-      @thrift.batch_mutate(@keyspace, mutation_map, consistency_level)
+      @thrift.batch_mutate(@keyspace, mutation_map, translate_consistency_level(consistency_level))
     end
     
     def generate_mutation_map(mutations)
@@ -127,7 +129,7 @@ module GreekArchitect
 
       mutations.each do |mutation|
         x = mutation_map[mutation.column.row.key.to_s] ||= {}
-        y = x[mutation.column.row.column_family.name] ||= []
+        y = x[mutation.column.column_family.cassandra_name] ||= []
 
         thrift_col = case mutation.action
         when :insert
@@ -223,24 +225,8 @@ module GreekArchitect
       end
     end
     
-    def get_column_family(klass)
-      if klass.is_a?(ColumnFamily)
-        cf = klass
-      else
-        cf = GreekArchitect::column_family(klass)
-      end
-      
-      raise "#{klass} does not have a key value set! (use key :type)" if cf.key.nil?
-      cf
-    end
-    
     def wrap(klass, key = nil)
-      cf = get_column_family(klass)
-      if klass.is_a?(ColumnFamily)
-        klass = RowWrapper
-      end
-      
-      klass.new(self, cf, key)
+      klass.new(self, key)
     end
     
     def wrap_custom(column_family, key = nil)

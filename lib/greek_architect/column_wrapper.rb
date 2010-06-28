@@ -1,25 +1,34 @@
 module GreekArchitect
   
   class ColumnWrapper
-    def initialize(client, row)
-      @client = client
+    def initialize(row, column_family)
       @row = row
+      @column_family = column_family
       
       @name = nil
       @value = nil
       
       @name_raw = nil
       @value_raw = nil
+      
       @timestamp = nil
       
-      @name_type = row.column_family.compare_with
+      @name_type = column_family.compare_with
     end
     
-    def column_family
-      @row.column_family
-    end
+    def column_family; @column_family; end
+    def row; @row; end
+#   
+#     
+#     if tcol = @client.get(@row, column_name, consistency_level)
+#       
+#       col.load_raw_values(tcol.column.name, tcol.column.value, tcol.column.timestamp)
+#       return col
+#     end
+#     
+#     nil
     
-    attr_reader :client, :row
+    attr_reader :column_family
     
     def init_with_name(name)
       @name = name
@@ -61,16 +70,13 @@ module GreekArchitect
       @client.current_mutation.append_delete(self)
     end
     
-    def insert(value, timestamp = nil)
+    def set_value(value, timestamp = nil)
       @previous_value = self.value
       
       @value = value
-      @value_raw = value_type.encode(value)
-      
       @timestamp = timestamp if timestamp
 
-      @client.current_mutation.append_insert(self)
-
+      @row.client.current_mutation.append_insert(self)
       
       self
     end
@@ -87,8 +93,8 @@ module GreekArchitect
     
     def value_type
       @value_type ||= begin
-        v = (row.column_family.named_columns[name] || row.column_family.value_type)
-        raise "could not find proper value type for #{row.column_family.name}" unless v
+        v = (@column_family.named_columns[name] || @column_family.value_type)
+        raise "could not find proper value type for #{@column_family.name}" unless v
         v
       end
     end
@@ -110,7 +116,7 @@ module GreekArchitect
     end
     
     def inspect
-      "<GreekArchitect::ColumnWrapper:#{object_id} @row=#{row.key.to_s.inspect} @name=#{name.inspect} @value=#{value.inspect}>"
+      "<GreekArchitect::ColumnWrapper:#{object_id} @row=#{row.inspect} @name=#{name.inspect} @value=#{value.inspect}>"
     end
   end
 end

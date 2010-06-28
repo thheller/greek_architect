@@ -20,7 +20,7 @@ module GreekArchitect
     
     module ClassMethods
       def register_as(typename, fqcn = nil)
-        GreekArchitect::register_type(typename, self, fqcn)
+        GreekArchitect::Runtime.instance.register_type(typename, self, fqcn)
       end
     end
   end
