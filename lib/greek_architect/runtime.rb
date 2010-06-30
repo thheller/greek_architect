@@ -54,22 +54,45 @@ module GreekArchitect
     def initialize()
       @registered_types = {}
       @row_configs = {}
+      
       @client = nil
     end
     
-    def connect(keyspace, server)
-      @client = Client.connect(server, keyspace)      
+    def configure(options)
+      if options.nil? or options.empty?
+        raise "invalid cassandra config, need at least keyspace/servers"
+      end
+      
+      servers = options['servers']
+      keyspace = options['keyspace']
+      
+      if !servers.is_a?(Array) or servers.empty?
+        raise "cassandra:servers cannot be empty and must be an array: #{servers.inspect}"
+      end
+      
+      if !keyspace.is_a?(String)
+        raise "cassandra:keyspace must be a string: #{keyspace.inspect}"
+      end
+      
+      @servers = servers
+      @keyspace = keyspace
+      
+      if x = options['extra_types']
+        x.each do |it|
+          Object.const_get(it)
+        end
+      end
+      
     end
-    
+
     def client
-      raise NotConnected, 'not connected' unless @client
-      @client
+      @client ||= Client.new(@keyspace, @servers)
     end
     
     def get_row_config(klass)
       raise 'not a class' unless klass.is_a?(Class)
       
-      @row_configs[klass.to_s] ||= RowConfig.new(klass)
+      @row_configs[klass.to_s] ||= RowConfig.new(klass.to_s)
     end
     
     def get_type_by_name(typename)

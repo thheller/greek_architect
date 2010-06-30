@@ -31,25 +31,21 @@ module GreekArchitect
       pp args
       
       res = @delegate.send(method, *args)
+      puts "<------------------- RESULT:"
+      pp res
+      
       puts "<-------------------- took: #{Time.now.to_f - start}ms"
       res
     end
   end
+
   
   class Client
-    
-    def self.connect(server, keyspace)
-      thrift = ThriftClient.new(
-        CassandraThrift::Cassandra::Client,
-        [server],
-        { :transport_wrapper => Thrift::BufferedTransport })
+    def initialize(keyspace, servers)
+      @servers = servers
+
+      connect_to_server!
       
-      new(thrift, keyspace)
-    end
-    
-    def initialize(thrift, keyspace)
-      @thrift = thrift
-      @thrift = Spy.new(@thrift)
       @keyspace = keyspace
       @current_mutation = nil
     end
@@ -59,7 +55,9 @@ module GreekArchitect
     end
     
     def schema()
-      @schema ||= @thrift.describe_keyspace(@keyspace)
+      @schema ||= begin
+        thrift_call { |t| t.describe_keyspace(@keyspace) }
+      end
     end   
     
     def read_consistency_level
@@ -70,22 +68,28 @@ module GreekArchitect
       CassandraThrift::ConsistencyLevel::ONE
     end
     
-    def get(row, column_name, consistency_level)    
-      # for 0.7 we should use column_family.key.encode(key) so we use binary keys
+    def get(row, column_family, column_name, consistency_level = nil)    
       column_path = CassandraThrift::ColumnPath.new(
-        :column_family => row.column_family.name,
-        :column => row.column_family.compare_with.encode(column_name)
+        :column_family => column_family.cassandra_name,
+        :column => column_family.compare_with.encode(column_name)
       )
       
-      @thrift.get(@keyspace, row.key.to_s, column_path, translate_consistency_level(consistency_level || read_consistency_level))
+      thrift_call do |t|
+        begin
+          t.get(@keyspace, row.key.to_s, column_path, translate_consistency_level(consistency_level || read_consistency_level))
+        rescue CassandraThrift::NotFoundException
+          nil
+        end
+      end
     end
     
-    def get_count(column_family, key, consistency_level)
-      @thrift.get_count(
-        @keyspace,
-        key.to_s,
-        CassandraThrift::ColumnParent.new(:column_family => column_family.name),
-        translate_consistency_level(consistency_level || read_consistency_level))
+    def get_count(row, column_family, consistency_level)
+      column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family.cassandra_name)
+      
+      thrift_call do |t|
+        t.get_count(@keyspace, row.key.to_s, column_parent,
+            translate_consistency_level(consistency_level || read_consistency_level))
+      end
     end
   
     def get_slice(row, column_family, opts)
@@ -116,12 +120,16 @@ module GreekArchitect
         )
       )
       
-      @thrift.get_slice(@keyspace, row.key.to_s, column_parent, predicate, consistency_level)
+      thrift_call do |t|
+        t.get_slice(@keyspace, row.key.to_s, column_parent, predicate, consistency_level)
+      end
     end
     
     def batch_mutate(mutations, consistency_level)
       mutation_map = generate_mutation_map(mutations)
-      @thrift.batch_mutate(@keyspace, mutation_map, translate_consistency_level(consistency_level))
+      thrift_call do |t|
+        t.batch_mutate(@keyspace, mutation_map, translate_consistency_level(consistency_level))
+      end
     end
     
     def generate_mutation_map(mutations)
@@ -190,7 +198,9 @@ module GreekArchitect
         :column_family => cf.name
       )
       
-      @thrift.remove(@keyspace, key.to_s, column_path, timestamp, CassandraThrift::ConsistencyLevel::ONE)
+      thrift_call do |t|
+        t.remove(@keyspace, key.to_s, column_path, timestamp, CassandraThrift::ConsistencyLevel::ONE)
+      end
     end
     
     def delete_all_rows!(klass)
@@ -218,19 +228,19 @@ module GreekArchitect
         # FIXME: this is really bad ;)
       )
       
-      @thrift.get_range_slices(@keyspace, column_parent, predicate, key_range, CassandraThrift::ConsistencyLevel::ONE).each do |it|
-        unless it.columns.empty?
-          _delete_row(cf, it.key)
+      thrift_call do |t|
+        t.get_range_slices(@keyspace, column_parent, predicate, key_range, CassandraThrift::ConsistencyLevel::ONE).each do |it|
+          unless it.columns.empty?
+            _delete_row(cf, it.key)
+          end
         end
       end
     end
     
     def wrap(klass, key = nil)
-      klass.new(self, key)
-    end
-    
-    def wrap_custom(column_family, key = nil)
-      RowWrapper.new(self, column_family, key)
+      row_config = GreekArchitect::runtime.get_row_config(klass)      
+      
+      klass.new(self, row_config, key)
     end
 
     def mutate(consistency_level = nil, &block)
@@ -255,5 +265,35 @@ module GreekArchitect
     def timestamp
       (Time.new.to_f * 1_000_000).to_i
     end
+    
+    protected
+    
+    def connect_to_server!
+      @current_server = @servers[rand(@servers.length)]
+      host, port = @current_server.split(/:/)
+      
+      @socket = Thrift::Socket.new(host, port)
+      @transport = Thrift::BufferedTransport.new(@socket)
+
+      if not @transport.open
+        raise 'connection failed'
+      end      
+
+      @protocol = Thrift::BinaryProtocol.new(@transport)
+
+      @thrift = CassandraThrift::Cassandra::Client.new(@protocol)
+    end
+    
+    def thrift_call 
+      begin        
+        connect_to_server! if not (@socket and @socket.open?)
+        
+        yield(Spy.new(@thrift))
+        
+      rescue
+        puts "THRIFT_INTERCEPT! #{$!.class} - #{$!.message}"
+        raise
+      end
+    end    
   end
 end

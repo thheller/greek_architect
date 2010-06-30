@@ -9,7 +9,7 @@ module GreekArchitect
     end
 
     def cassandra_name
-      @cassandra_name ||= [@row_config.cassandra_name, @name].collect { |it| it.to_s.capitalize }.join("")
+      @cassandra_name ||= [@row_config.cassandra_name, @name.to_s.split("_").collect { |it| it.to_s.capitalize }.join("")].join("_")
     end
 
     def column(name, type_name)
@@ -54,7 +54,7 @@ module GreekArchitect
     alias_method :present?, :exists?
 
     def column_count(consistency_level = nil)
-      @row.client.get_count(column_family, @row.key, consistency_level)
+      @row.client.get_count(@row, @config, consistency_level)
     end    
 
     def slice(opts = {})      

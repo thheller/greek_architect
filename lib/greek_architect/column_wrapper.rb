@@ -18,15 +18,12 @@ module GreekArchitect
     
     def column_family; @column_family; end
     def row; @row; end
-#   
-#     
-#     if tcol = @client.get(@row, column_name, consistency_level)
-#       
-#       col.load_raw_values(tcol.column.name, tcol.column.value, tcol.column.timestamp)
-#       return col
-#     end
-#     
-#     nil
+    
+    def load_column()
+      if tcol = @row.client.get(@row, @column_family, name)
+        load_raw_values(tcol.column.name, tcol.column.value, tcol.column.timestamp)
+      end
+    end
     
     attr_reader :column_family
     
@@ -44,7 +41,8 @@ module GreekArchitect
     
     def create(name, value, timestamp = nil)
       @name = name
-      @value = value
+      assign_value(value)
+
       @timestamp = timestamp
             
       parent.client.current_mutation.append_update(self)
@@ -71,9 +69,8 @@ module GreekArchitect
     end
     
     def set_value(value, timestamp = nil)
-      @previous_value = self.value
+      assign_value(value)
       
-      @value = value
       @timestamp = timestamp if timestamp
 
       @row.client.current_mutation.append_insert(self)
@@ -100,11 +97,21 @@ module GreekArchitect
     end
   
     def value
-      @value ||= (@value_raw.nil? ? nil : value_type.decode(@value_raw))
+      @value ||= begin
+        if @value_raw.nil?
+          load_column()
+        end
+        
+        if @value_raw.nil?
+          nil
+        else
+          value_type.decode(@value_raw)
+        end
+      end
     end
     
     def value_raw
-      @value_raw ||= (@value.nil? ? nil : value_type.encode(@value))
+      @value_raw
     end
     
     def previous_value
@@ -117,6 +124,19 @@ module GreekArchitect
     
     def inspect
       "<GreekArchitect::ColumnWrapper:#{object_id} @row=#{row.inspect} @name=#{name.inspect} @value=#{value.inspect}>"
+    end
+  
+    private
+
+    def assign_value(value)
+      @previous_value = @value if @value
+      @value = value
+
+      begin
+        @value_raw = value_type.encode(value)
+      rescue TypeError => err
+        raise "Failed to encode value for #{@row.class}.#{@column_family.name} column: #{err.message}"
+      end
     end
   end
 end

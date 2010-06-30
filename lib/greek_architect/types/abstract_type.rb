@@ -1,6 +1,25 @@
 
 module GreekArchitect
+  class TypeError < ArgumentError
+    def initialize(expected, got)
+      @expected = expected
+      @got = got
+    end
+    
+    attr_reader :expected, :got
+    
+    def inspect
+      "<TypeError:#{object_id} @expected=#{@expected} @got=#{@got}>"
+    end
+    
+    def message
+      "TypeError expected=#{@expected} got=#{@got}"
+    end
+  end  
+  
   module Types
+
+    
     class AbstractType
       def initialize(opts = {})
         @opts = opts
@@ -12,7 +31,7 @@ module GreekArchitect
       
       def check_type!(expected, instance)
         if not instance.is_a?(expected)
-          raise(ArgumentError, "value is not of type #{expected}: #{instance.class}", caller)
+          raise TypeError.new(expected, instance.class)
         end
       end
       

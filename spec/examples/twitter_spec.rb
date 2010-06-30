@@ -3,7 +3,11 @@ require File.dirname(__FILE__) + '/twitter_model.rb'
 
 describe 'Twitter' do
   before(:each) do
-    GreekArchitect::connect('TwitterSpec', '127.0.0.1:9160')
+    GreekArchitect::runtime.configure({
+      'keyspace' => 'TwitterSpec',
+      'servers' => ['127.0.0.1:9160']
+    })
+    
   end
   
   it "should work" do

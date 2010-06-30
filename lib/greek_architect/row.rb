@@ -2,14 +2,14 @@
 
 module GreekArchitect
   class RowConfig
-    def initialize(row_class)
-      @row_class = row_class
+    def initialize(name)
+      @name = name
       @key_type = nil
       @column_families = {}
     end
     
     def cassandra_name
-      @row_class.to_s
+      @name
     end
     
     def column_family(name)
@@ -24,8 +24,8 @@ module GreekArchitect
       klass.extend(RowClassMethods)
     end
     
-    def initialize(client, key)
-      @row_config = GreekArchitect::runtime.get_row_config(self.class)
+    def initialize(client, row_config, key)
+      @row_config = row_config
 
       @client = client
       @key = key || @row_config.key_type.new_instance()
@@ -82,11 +82,25 @@ module GreekArchitect
     end
     
     def create()
-      GreekArchitect::Runtime.instance.client.wrap(self, nil)
+      x = GreekArchitect::Runtime.instance.client.wrap(self, nil)
+      if block_given?
+        x.mutate do
+          yield(x)
+        end
+      end
+      
+      x
     end
     
     def get(key)
-      GreekArchitect::Runtime.instance.client.wrap(self, key)
+      x = GreekArchitect::Runtime.instance.client.wrap(self, key)
+      if block_given?
+        x.mutate do
+          yield(x)
+        end
+      end
+      
+      x
     end
   end
 end
