@@ -1,17 +1,28 @@
 require 'msgpack'
 require 'json'
+require 'uuidtools'
 
 module GreekArchitect
   module Types
     
     module UUIDConverter
+      def convert(value)
+        if value.is_a?(UUIDTools::UUID)
+          return value
+        elsif value.is_a?(::String) and value =~ /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
+          return UUIDTools::UUID.parse(value)
+        else
+          raise TypeError.new(UUIDTools::UUID, value)
+        end
+      end
+      
       def decode(bytes)
-        ::UUID.from_raw_bytes(bytes)
+        ::UUIDTools::UUID.parse_raw(bytes)
       end
 
       def encode(value)
-        check_type!(::UUID, value)
-        value.raw_bytes
+        check_type!(::UUIDTools::UUID, value)
+        value.raw
       end
     end
     
@@ -19,13 +30,22 @@ module GreekArchitect
       include UUIDConverter
       register_as :time_uuid, 'org.apache.cassandra.db.marshal.TimeUUIDType'
 
+      def min_value()
+        ::UUIDTools::UUID.timestamp_create(Time.at(0))
+      end
+
+      # FIXME: precision? 
+      def incr(value)
+        timestamp = value.timestamp
+        ::UUIDTools::UUID.timestamp_create(timestamp + 0.00001)
+      end
+      
       def new_instance()
-        ::UUID.create_v1
+        ::UUIDTools::UUID.timestamp_create()
       end
     end 
     
     # aka random
-    # TODO: figure out if lexical requires a 'string' version instead of raw bytes
     class UUIDv4 < AbstractType
       include UUIDConverter
 
@@ -34,23 +54,19 @@ module GreekArchitect
       register_as :guid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
 
       def new_instance()
-        ::UUID.create_v4
+        ::UUIDTools::UUID.random_create()
       end
     end
     
-    # FIXME: has to resort to an ugly hack to be able to encode
-    # Simple values like  'asdf',1 , 1.1, etc
-    # since the JSON.generate only otherwise would accept Hash or Array object
     class JSON < AbstractType
       register_as :json
       
-      # uses a slight hack
       def decode(bytes)
-        ::JSON.parse(bytes)['value']
+        ::JSON.parse(bytes)
       end
       
       def encode(value)
-        ::JSON.generate({'value' => value})
+        ::JSON.generate(value)
       end
     end
 

@@ -29,6 +29,30 @@ module GreekArchitect
       wrapper.new_instance()
     end
     
+    def incr(value)
+      if wrapper.respond_to?(:incr)
+        wrapper.incr(value)
+      else
+        raise ArgumentError, "#{@greek_type.ruby_type} does not support incrementing, each not supported, use slice"
+      end
+    end
+    
+    def min_value()
+      if wrapper.respond_to?(:min_value)
+        wrapper.min_value()
+      else
+        raise ArgumentError, "#{@greek_type.ruby_type} does not support min_value, each not supported, use slice"
+      end
+    end
+    
+    def convert(value)
+      if value.nil?
+        wrapper.new_instance()
+      else
+        wrapper.convert(value)
+      end
+    end
+    
     def encode(value)
       raise "#{self.class} cannot encode nil values" if value.nil?
       
@@ -76,13 +100,6 @@ module GreekArchitect
       
       @servers = servers
       @keyspace = keyspace
-      
-      if x = options['extra_types']
-        x.each do |it|
-          Object.const_get(it)
-        end
-      end
-      
     end
 
     def client

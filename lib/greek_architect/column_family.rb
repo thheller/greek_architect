@@ -45,30 +45,47 @@ module GreekArchitect
 
     # you might want better consistency when checking if an object exists
     def exists?(consistency_level = nil)
-      # suggested by stuhood on #cassandra
-      # if theres any column in this row we declare it as existant
-      # faster than doing a column_count() > 0
-      slice(:count => 1).any?
+      @row.client.get_slice(@row, @config, {:count => 1}).any?
     end
 
     alias_method :present?, :exists?
 
     def column_count(consistency_level = nil)
       @row.client.get_count(@row, @config, consistency_level)
-    end    
+    end
+    
+    def hash_slice(opts = {})
+      result = {}
+      slice(opts).each do |col|
+        result[col.name] = col.value
+      end
+      result
+    end
 
     def slice(opts = {})      
       @row.client.get_slice(@row, @config, opts).collect do |it|
         col = ColumnWrapper.new(@row, @config)
-        col.load_raw_values(it.column.name, it.column.value, it.column.value)
+        col.load_raw_values(it.column.name, it.column.value, it.column.timestamp)
         @columns[col.name] = col
         col
       end
     end
     
+    def last_timestamp
+      list = slice(:reversed => true, :count => 1)
+      list.empty? ? -1 : list[0].timestamp
+    end
+    
     def each
-      slice(:count => 5).each do |col|
-        yield(col)
+      current_start = @config.compare_with.min_value
+      batch_size = 5
+      
+      while (list = slice(:start => current_start, :count => batch_size)) and not list.empty?
+        list.each do |it|
+          yield(it)
+          
+          current_start = @config.compare_with.incr(it.name)
+        end
       end
     end
 

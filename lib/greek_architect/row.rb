@@ -21,7 +21,17 @@ module GreekArchitect
   
   class Row
     def self.inherited(klass)
+      klass.extend(RowHelperClassMethods)
       klass.extend(RowClassMethods)
+    end
+    
+    # support for ActsAsRow
+    def greek_architect_row
+      self
+    end
+    
+    def greek_architect_row_config
+      @row_config
     end
     
     def initialize(client, row_config, key)
@@ -55,32 +65,6 @@ module GreekArchitect
       cfg.key_type = runtime.get_type_by_name(type_name).configure()
     end
     
-    def column_family(name, compare_with, value_type, &block)
-      runtime = GreekArchitect::Runtime.instance
-      
-      cfg = runtime.get_row_config(self).column_family(name)
-      cfg.compare_with = runtime.get_type_by_name(compare_with).configure()
-      cfg.value_type = runtime.get_type_by_name(value_type).configure()
-
-      block.call(cfg) if block_given?
-      
-      class_eval %{
-        def #{name}
-          @column_family_#{name} ||= begin
-            ColumnFamily.new(self, @row_config.column_family(#{name.inspect}))
-          end
-        end
-      }
-    end
-    
-    def list(name, compare_with, value_type, &block)
-      column_family(name, compare_with, value_type, &block)
-    end
-    
-    def hash(name, &block)
-      column_family(name, :symbol, :msgpack, &block)
-    end
-    
     def create()
       x = GreekArchitect::Runtime.instance.client.wrap(self, nil)
       if block_given?
@@ -102,5 +86,40 @@ module GreekArchitect
       
       x
     end
+  end
+  
+  module RowHelperClassMethods
+    def column_family(name, compare_with = :symbol, value_type = :msgpack, &block)
+      runtime = GreekArchitect::Runtime.instance
+      
+      cfg = runtime.get_row_config(self).column_family(name)
+      cfg.compare_with = runtime.get_type_by_name(compare_with).configure()
+      cfg.value_type = runtime.get_type_by_name(value_type).configure()
+
+      block.call(cfg) if block_given?
+      
+      class_eval %{
+        def #{name}
+          @column_family_#{name} ||= begin
+            ColumnFamily.new(greek_architect_row, greek_architect_row_config.column_family(#{name.inspect}))
+          end
+        end
+      }
+    end
+    
+    def on_mutation_of(row_klass, column_family, column_name, &block)
+      runtime = GreekArchitect::Runtime.instance
+
+      cfg = runtime.get_row_config(row_klass).column_family(column_family)
+      cfg.register_observer(column_name, block)
+    end
+    
+    # def list(name, compare_with, value_type, &block)
+    #   column_family(name, compare_with, value_type, &block)
+    # end
+    # 
+    # def hash(name, compare_with = :symbol, value_type = :msgpack, &block)
+    #   column_family(name, compare_with, value_type, &block)
+    # end    
   end
 end

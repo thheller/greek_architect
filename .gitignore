@@ -3,6 +3,7 @@
 
 .autotest
 autotest/*
+coverage/*
 
 log/*
 tmp/*

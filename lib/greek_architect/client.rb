@@ -27,14 +27,9 @@ module GreekArchitect
     
     def method_missing(method, *args)
       start = Time.now.to_f
-      puts "-------------------> Thrift.#{method}"
-      pp args
-      
+      puts "THRIFT: ----> #{method} #{args.inspect}"
       res = @delegate.send(method, *args)
-      puts "<------------------- RESULT:"
-      pp res
-      
-      puts "<-------------------- took: #{Time.now.to_f - start}ms"
+      puts "THRIFT: <- #{"%.5f" % (Time.now.to_f - start)}ms - #{res.inspect}"
       res
     end
   end
@@ -162,84 +157,52 @@ module GreekArchitect
       mutation_map
     end
     
-    def delete_row(klass, key)
-      cf = get_column_family(klass)
-      
-      # TODO: "Deletion does not yet support SliceRange predicates."
-      
-      # deletion = CassandraThrift::Deletion.new(
-      #   :predicate => CassandraThrift::SlicePredicate.new(
-      #     :slice_range => CassandraThrift::SliceRange.new(
-      #       :start => '',
-      #       :finish => '',
-      #       :count => 2147483647 # Integer.MAX_VALUE
-      #     )
-      #   ),
-      #   :timestamp => timestamp
-      # )
-      # 
-      # mutation = CassandraThrift::Mutation.new(
-      #   :deletion => deletion
-      # )
-      # 
-      # mutation_map = { key.to_s => { cf.name => [mutation] } }
-      # 
-      # @thrift.batch_mutate(@keyspace, mutation_map, CassandraThrift::ConsistencyLevel::ONE)
-      
-      # easiest way to enforce beeing inside a mutation, yet we are not actually mutating
-      # FIXME: wtf ;)      
-      current_mutation
-      
-      _delete_row(cf, key)
-    end
-    
-    def _delete_row(cf, key)
-      column_path = CassandraThrift::ColumnPath.new(
-        :column_family => cf.name
-      )
-      
-      thrift_call do |t|
-        t.remove(@keyspace, key.to_s, column_path, timestamp, CassandraThrift::ConsistencyLevel::ONE)
-      end
-    end
-    
-    def delete_all_rows!(klass)
-      cf = get_column_family(klass)
-      
-      # FIXME: wtf ;)      
-      current_mutation
-      
-      column_parent = CassandraThrift::ColumnParent.new(
-        :column_family => cf.name
-      )
-      
-      predicate = CassandraThrift::SlicePredicate.new(
-        :slice_range => CassandraThrift::SliceRange.new(
-          :start => '',
-          :finish => '',
-          :count => 1
-        )
-      )
-      
-      key_range = CassandraThrift::KeyRange.new(
-        :start_key => '',
-        :end_key => '',
-        :count => 10000
-        # FIXME: this is really bad ;)
-      )
-      
-      thrift_call do |t|
-        t.get_range_slices(@keyspace, column_parent, predicate, key_range, CassandraThrift::ConsistencyLevel::ONE).each do |it|
-          unless it.columns.empty?
-            _delete_row(cf, it.key)
+    def delete_everything!
+      schema().keys.each do |cf_name|
+            
+         column_parent = CassandraThrift::ColumnParent.new(
+           :column_family => cf_name
+         )
+         
+         column_path = CassandraThrift::ColumnPath.new(
+           :column_family => cf_name
+         )         
+     
+         predicate = CassandraThrift::SlicePredicate.new(
+           :slice_range => CassandraThrift::SliceRange.new(
+             :start => '',
+             :finish => '',
+             :count => 1
+           )
+         )
+     
+         key_range = CassandraThrift::KeyRange.new(
+           :start_key => '',
+           :end_key => '',
+           :count => 10000
+           # FIXME: this is really bad!
+         )
+        
+        
+        thrift_call do |t|
+          t.get_range_slices(@keyspace, column_parent, predicate, key_range, CassandraThrift::ConsistencyLevel::ONE).each do |it|
+
+            unless it.columns.empty?
+              t.remove(@keyspace, it.key, column_path, timestamp, CassandraThrift::ConsistencyLevel::ONE)
+            end
           end
-        end
+        end        
       end
+    end
+
+    def wrap_row(row_config, key)
+      key = row_config.key_type.convert(key)
+      Row.new(self, row_config, key)
     end
     
     def wrap(klass, key = nil)
       row_config = GreekArchitect::runtime.get_row_config(klass)      
-      
+      key = row_config.key_type.convert(key)
       klass.new(self, row_config, key)
     end
 
@@ -288,7 +251,12 @@ module GreekArchitect
       begin        
         connect_to_server! if not (@socket and @socket.open?)
         
-        yield(Spy.new(@thrift))
+        yield(@thrift)
+      
+      rescue Thrift::TransportException => err
+        @socket.close
+        puts "caught Thrift::TransportException, retrying"
+        retry
         
       rescue
         puts "THRIFT_INTERCEPT! #{$!.class} - #{$!.message}"

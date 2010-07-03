@@ -1,4 +1,4 @@
-require 'spec_helper'
+require File.dirname(__FILE__) + '/../spec_helper.rb'
 require File.dirname(__FILE__) + '/twitter_model.rb'
 
 describe 'Twitter' do
@@ -29,12 +29,24 @@ describe 'Twitter' do
     
     fanboi.follow!(user)
     
-    user.tweet!('hello world!')
+    ff = fanboi.following.slice()
+    ff.length.should == 1
+    ff.first.name.should == user.key
+    
+    uf = user.followers.slice()
+    uf.length.should == 1
+    uf.first.name.should == fanboi.key
+    
+    tweet = user.tweet!('hello world!')
+    
+    ut = user.timeline.slice()
+    ut.length == 1
+    ut.first.value.should == tweet.key
     
     list = fanboi.most_recent_tweets()
-    list.length == 1
+    list.length.should == 1
+    
     first = list.first
-
     first.message[:body].should == 'hello world!'
     first.message[:created_by].should == user.key
   end

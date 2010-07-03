@@ -9,11 +9,11 @@ module GreekArchitect
     attr_reader :expected, :got
     
     def inspect
-      "<TypeError:#{object_id} @expected=#{@expected} @got=#{@got}>"
+      "<TypeError:#{object_id} @expected=#{@expected} @got=#{@got.inspect}>"
     end
     
     def message
-      "TypeError expected=#{@expected} got=#{@got}"
+      "TypeError expected=#{@expected} got=#{@got.inspect}"
     end
   end  
   
@@ -29,6 +29,10 @@ module GreekArchitect
         klass.extend(ClassMethods)
       end
       
+      def convert(value)
+        value
+      end
+
       def check_type!(expected, instance)
         if not instance.is_a?(expected)
           raise TypeError.new(expected, instance.class)

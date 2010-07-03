@@ -11,7 +11,7 @@ module GreekArchitect
       @name_raw = nil
       @value_raw = nil
       
-      @timestamp = nil
+      @timestamp = 0
       
       @name_type = column_family.compare_with
     end
@@ -43,7 +43,7 @@ module GreekArchitect
       @name = name
       assign_value(value)
 
-      @timestamp = timestamp
+      @timestamp = timestamp || @row.client.timestamp
             
       parent.client.current_mutation.append_update(self)
       
@@ -71,7 +71,7 @@ module GreekArchitect
     def set_value(value, timestamp = nil)
       assign_value(value)
       
-      @timestamp = timestamp if timestamp
+      @timestamp = timestamp || @row.client.timestamp
 
       @row.client.current_mutation.append_insert(self)
       
@@ -123,7 +123,7 @@ module GreekArchitect
     end
     
     def inspect
-      "<GreekArchitect::ColumnWrapper:#{object_id} @row=#{row.inspect} @name=#{name.inspect} @value=#{value.inspect}>"
+      "<GreekArchitect::ColumnWrapper:#{object_id} @row=#{row.inspect} @name=#{name.inspect} @value=#{value.inspect} @timestamp=#{@timestamp.inspect}>"
     end
   
     private

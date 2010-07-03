@@ -2,20 +2,21 @@
 class User < GreekArchitect::Row
   key :uuid
   
-  list(:following, :uuid, :string)
-  list(:followers, :uuid, :string)
+  column_family(:following, :uuid, :string)
+  column_family(:followers, :uuid, :string)
   
-  list(:timeline, :time_uuid, :uuid)
-  list(:tweets, :time_uuid, :uuid)
-  list(:favorites, :time_uuid, :string)
+  column_family(:timeline, :time_uuid, :uuid)
+  column_family(:tweets, :time_uuid, :uuid)
+  column_family(:favorites, :time_uuid, :string)
 
-  hash(:profile) do |cf|
+  column_family(:profile, :symbol) do |cf|
     cf.column :name, :string
     cf.column :created_at, :timestamp
   end
   
   def most_recent_tweets()
-    timeline.slice(:count => 5, :reversed => true).collect do |col|
+    list = timeline.slice(:count => 5, :reversed => true)
+    list.collect do |col|
       Tweet.get(col.value)
     end
   end
@@ -50,31 +51,38 @@ class User < GreekArchitect::Row
       tweet.message[:created_at] = Time.now
       tweet.message[:created_by] = self.key
       
+      # could be done in broadcast
       timeline.append_value(tweet.key)
       tweets.append_value(tweet.key)
     end
     
-    tweet.broadcast! # DJ: send_later(:broadcast!) RESQUE: .async(:broadcast!)
+    tweet.broadcast! # DJ, RESQUE, etc: send_later(:broadcast!)
+    tweet
   end
 end
 
 class Tweet < GreekArchitect::Row
   key :time_uuid
   
-  hash(:message) do |cf|
+  column_family(:message, :symbol) do |cf|
     cf.column :body, :string
     cf.column :created_at, :timestamp
     cf.column :created_by, :uuid
   end
   
-  list(:favorized_by, :time_uuid, :uuid)
+  column_family(:favorized_by, :time_uuid, :uuid)
   
-  # list :broadcasted_to, :compare_with => :time_uuid, :value_type => :reference
+  # column_family :broadcasted_to, :time_uuid, :uuid
   
   def broadcast!
     mutate do
-      User.get(message[:created_by]).followers.each do |col|
-        User.get(col.name).timeline.append_value(self.key)
+      src = User.get(message[:created_by])
+      
+      # FIXME: implement each for UUIDv4
+      src.followers.slice(:count => 100).each do |col|
+
+        target = User.get(col.name)
+        target.timeline.append_value(self.key)
         
         # overkill! only to know who got it ... fun tho :P
         # at 1mil followers each tweet would be at least 50mb

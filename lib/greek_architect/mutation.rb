@@ -47,7 +47,7 @@ module GreekArchitect
       # this is a VERY naive implementation
       # it WILL result in an infinite loop when try to mutate the column you were watching!
       
-      # FIXME: move to a stack/phase based approach
+      # FIXME: move to a stack/phase model
       @mutations.each do |mutation|
         column_name = mutation.column.name
         column_family = mutation.column.column_family
