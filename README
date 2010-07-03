@@ -39,6 +39,10 @@ gem install thrift
 gem install uuidtools
 gem install msgpack
 gem install json
+gem install rspec --pre
+
+git clone git://github.com/thheller/greek_architect.git
+cd greek_architect
 
 rspec examples/demo
 rspec examples/twitter
