@@ -1,100 +1,44 @@
-Consider this a learning-experiment.
+Consider this a work in progress
 
-I do consider BigTable-like Databases (Cassandra, HBase, etc) to be the future
-and I want to be ready for it. More importantly the sooner I can move away
-from SQL myself the better. There are some very valid use-cases for SQL
-and I'll most certainly continue using it for certain parts of my Applications
-(parts that NEED to have ACID).
+HOWTO:
 
-However, there are alot of areas where Data Structures possible with "NoSQL"
-are a lot more powerful even when working with smaller datasets that dont
-go into the TBs. SQL Schemas are just to restrictive sometimes. Plus almost
-unlimited scalability is always nice. ;)
+Install Cassandra (0.6.2+ required)
 
--------
+add:
 
-Anyways, at this point I dont recommend using this anywhere, since the API
-changes about every time I have time to think about it. Also since thinking
-about this Stuff is NOT my Job, the time I put into it is very limited.
+<Keyspace Name="TwitterSpec">
+  <ColumnFamily CompareWith="BytesType" Name="User_Profile" />
+  <ColumnFamily CompareWith="TimeUUIDType" Name="User_Tweets" />
+  <ColumnFamily CompareWith="TimeUUIDType" Name="User_Timeline" />
+  <ColumnFamily CompareWith="LexicalUUIDType" Name="User_Followers" />
+  <ColumnFamily CompareWith="LexicalUUIDType" Name="User_Following" />
 
-That being said, if you really want to see what this is about I suggest
-looking at the examples, since this is what I wanted to do and designed
-this library arround.
+  <ColumnFamily CompareWith="BytesType" Name="Tweet_Message" />
 
 
-2010-06-20:
-Had an idea for a slightly modifed abstraction to better mirror the underlying
-data model of rows/columns.
-
-Next Gen might look a little like this:
-- research/better_abstraction.rb
-
-
-2010-06-14:
-Attempted to come up with a first abstract and this is what I came up with
-
-Step #1: Insert a very basic User Model into Cassandra
-
-Start with the usage example:
- - spec/examples/user_create_spec.rb
-then look at 
- - spec/examples/user_model.rb
-to see the actual User Model implementation.
-
-
-Step #2: Index Users by Name
- - spec/examples/user_name_index_spec.rb
- - spec/examples/user_name_index_model.rb
-
-
-Step #3: Index created Users partitioned by Date
-  - you know where ...
-  
-
--------
-
-If you actually want to run those examples to see that it IS actually working
-you'll need the following:
-
-A running Cassandra instance at '127.0.0.1:9160' with a proper KeySpace:
-
-I'm not gonna cover installing cassandra,
-
-Keyspace should look like:
+  <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
+  <ReplicationFactor>1</ReplicationFactor>
+  <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
+</Keyspace> 
 
 <Keyspace Name="GreekArchitectByExample">
-    <ColumnFamily CompareWith="AsciiType" Name="User" />
-    <ColumnFamily CompareWith="AsciiType" Name="UserNameIndex" />
-    <ColumnFamily CompareWith="TimeUUIDType" Name="UserListIndex" />
+  <ColumnFamily CompareWith="AsciiType" Name="User_Profile" />
+  <ColumnFamily CompareWith="TimeUUIDType" Name="ByCreationDate_Users" />
+  <ColumnFamily CompareWith="UTF8Type" Name="ByName_Users" />
 
-    <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
-    <ReplicationFactor>1</ReplicationFactor>
-    <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
+  <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
+  <ReplicationFactor>1</ReplicationFactor>
+  <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
 </Keyspace>
 
-(only tested against 0.6.2!)
+to storage-conf.xml
 
-Ruby Gems and this lib (no gem release yet):
+Run
 
+gem install thrift
+gem install uuidtools
 gem install msgpack
 gem install json
-gem install thrift_client
-gem install rspec --pre
 
-git clone git://github.com/thheller/greek_architect.git
-cd greek_architect
-rspec spec
-
-and hope for something like:
-
-Finished in 0.36562 seconds
-8 examples, 0 failures
-
-;)
-
-
-
-About the Name:
-Greek Architects used a lot of Columns to build some impressive Structures
-and so does Cassandra (muhahahah ...)
-
+rspec examples/demo
+rspec examples/twitter

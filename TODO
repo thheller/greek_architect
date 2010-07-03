@@ -3,13 +3,13 @@ just about everything!
 
 Need to investigate:
 
-CLASS AUTOLOADING (aka auto-require)
+CLASS AUTOLOADING (RELOADING)
 
 I'm pretty sure any kind of auto loading (rails) will screw this up big time.
 
-Configuration happens at class definition time and is stored in the GreekArchitect module (which will be refactored at some point) and autoloading probably causes duplicate values and the like. So dont use it within anything that does auto-loading!
+Configuration happens at class definition time and is stored in the GreekArchitect Runtime and autoloading probably causes duplicate values and the like. So dont use it within anything that does auto-loading!
 
 
 SUPER COLUMNS
 
-While there might be some very legitimate usecases for SuperColumns I have yet to think of one. Until I really need one, SuperColumns are not supported.
+gonna need em some day ...

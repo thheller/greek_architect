@@ -23,6 +23,9 @@ $LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
 require 'rubygems'
 require 'thrift'
+require 'msgpack'
+require 'json'
+require 'uuidtools'
 
 require 'greek_architect/gen-rb/cassandra_constants'
 require 'greek_architect/gen-rb/cassandra_types'
