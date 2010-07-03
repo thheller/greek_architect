@@ -134,7 +134,7 @@ module GreekArchitect
         x = mutation_map[mutation.column.row.key.to_s] ||= {}
         y = x[mutation.column.column_family.cassandra_name] ||= []
 
-        thrift_col = case mutation.action
+        thrift_mutation = case mutation.action
         when :insert
           CassandraThrift::Mutation.new(
             :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
@@ -146,12 +146,19 @@ module GreekArchitect
             )
           )
         when :delete
-          raise 'delete'
+          CassandraThrift::Mutation.new(
+            :deletion => CassandraThrift::Deletion.new(
+              :predicate => CassandraThrift::SlicePredicate.new(
+                :column_names => [mutation.column.name_raw]
+                ),
+              :timestamp => mutation.column.timestamp || timestamp
+            )
+          )
         else
           raise "dunno how to do #{mutation.inspect}"
         end
 
-        y << thrift_col
+        y << thrift_mutation
       end
 
       mutation_map
@@ -227,6 +234,11 @@ module GreekArchitect
     
     def timestamp
       (Time.new.to_f * 1_000_000).to_i
+    end
+    
+    def disconnect!
+      @transport.close
+      @socket.close
     end
     
     protected

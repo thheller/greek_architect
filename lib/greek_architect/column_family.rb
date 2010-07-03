@@ -98,6 +98,11 @@ module GreekArchitect
         col.set_value(column_value, timestamp)
       end      
     end
+    
+    def delete(column_name)
+      col = column_wrapper(column_name)
+      col.delete!
+    end
 
     def [](column_name)
       get(column_name).value

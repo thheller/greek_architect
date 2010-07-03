@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/../spec_helper'
+require File.dirname(__FILE__) + '/../../spec/spec_helper'
 require File.dirname(__FILE__) + '/user_model.rb'
 require File.dirname(__FILE__) + '/user_list_model.rb'
 

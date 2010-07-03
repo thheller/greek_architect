@@ -80,9 +80,13 @@ module GreekArchitect
       @row_configs = {}
       
       @client = nil
+      @servers = nil
+      @keyspace = nil
     end
     
     def configure(options)
+      disconnect!
+      
       if options.nil? or options.empty?
         raise "invalid cassandra config, need at least keyspace/servers"
       end
@@ -100,6 +104,11 @@ module GreekArchitect
       
       @servers = servers
       @keyspace = keyspace
+    end
+    
+    def disconnect!
+      @client.disconnect! if @client
+      @client = nil
     end
 
     def client

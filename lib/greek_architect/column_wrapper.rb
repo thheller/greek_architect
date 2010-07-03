@@ -51,21 +51,11 @@ module GreekArchitect
     end
     
     def delete!
-      #predicate = CassandraThrift::SlicePredicate.new(
-      #  :column_names => [@column.name]
-      #)
-      #
-      #@parent.client.current_mutation.append(
-      #  @parent.column_family,
-      #  @parent.key,
-      #  CassandraThrift::Mutation.new(
-      #    :deletion => CassandraThrift::Deletion.new(
-      #      :timestamp => @parent.client.timestamp,
-      #      :predicate => predicate
-      #    ))      
-      #)
-      
-      @client.current_mutation.append_delete(self)
+      @previous_value = @value
+      @value = nil
+      @timestamp = @row.client.timestamp
+
+      @row.client.current_mutation.append_delete(self)
     end
     
     def set_value(value, timestamp = nil)
