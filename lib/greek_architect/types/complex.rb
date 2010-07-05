@@ -43,7 +43,7 @@ module GreekArchitect
       end
 
       def encode(value)
-        return value if value == ''
+        return value if value.is_a?(String) and value == ''
         
         check_type!(::UUID, value)
         value.raw_bytes
