@@ -14,8 +14,8 @@ describe User do
     
     user = User.create()
     # the key is ALWAYS generated, user.id is never nil!
-    user.id.should be_an_instance_of(UUIDTools::UUID)
-    user.key.should be_an_instance_of(UUIDTools::UUID)
+    user.id.should be_an_instance_of(::UUID)
+    user.key.should be_an_instance_of(::UUID)
     
     # id is just an alias for key ...
     user.id.should == user.key

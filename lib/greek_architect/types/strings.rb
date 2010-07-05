@@ -24,6 +24,10 @@ module GreekArchitect
     
     class String < AbstractType
       register_as :string, 'org.apache.cassandra.db.marshal.UTF8Type'
+      
+      def incr(value)
+        value.succ
+      end
 
       def decode(bytes)
         bytes

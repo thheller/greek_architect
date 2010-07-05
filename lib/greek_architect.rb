@@ -25,7 +25,7 @@ require 'rubygems'
 require 'thrift'
 require 'msgpack'
 require 'json'
-require 'uuidtools'
+require 'uuid'
 
 require 'greek_architect/gen-rb/cassandra_constants'
 require 'greek_architect/gen-rb/cassandra_types'

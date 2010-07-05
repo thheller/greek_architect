@@ -14,8 +14,10 @@ class User < GreekArchitect::Row
     cf.column :created_at, :timestamp
   end
   
-  def most_recent_tweets()
-    list = timeline.slice(:count => 5, :reversed => true)
+  def timeline_tweets(opts)
+    opts[:reversed] = true unless opts.has_key?(:reversed)
+    
+    list = timeline.slice(opts)
     list.collect do |col|
       Tweet.get(col.value)
     end
@@ -79,7 +81,7 @@ class Tweet < GreekArchitect::Row
       src = User.get(message[:created_by])
       
       # FIXME: implement each for UUIDv4
-      src.followers.slice(:count => 100).each do |col|
+      src.followers.each do |col|
 
         target = User.get(col.name)
         target.timeline.append_value(self.key)

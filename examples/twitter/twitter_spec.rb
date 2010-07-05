@@ -37,17 +37,26 @@ describe 'Twitter' do
     uf.length.should == 1
     uf.first.name.should == fanboi.key
     
-    tweet = user.tweet!('hello world!')
+    tweet1 = user.tweet!('hello world! 1')
+    tweet2 = user.tweet!('hello world! 2')
+    tweet3 = user.tweet!('hello world! 3')
+    tweet4 = user.tweet!('hello world! 4')
+    tweet5 = user.tweet!('hello world! 5')
+    tweet6 = user.tweet!('hello world! 6')
+    tweet7 = user.tweet!('hello world! 7')
+    tweet8 = user.tweet!('hello world! 8')
+    tweet9 = user.tweet!('hello world! 9')
     
-    ut = user.timeline.slice()
-    ut.length == 1
-    ut.first.value.should == tweet.key
+    ut = user.timeline.slice(:count => 100, :reversed => true)
+    ut.length == 9
     
-    list = fanboi.most_recent_tweets()
-    list.length.should == 1
+    ut.first.value.should == tweet9.key
     
-    first = list.first
-    first.message[:body].should == 'hello world!'
-    first.message[:created_by].should == user.key
+    list = fanboi.timeline_tweets(:start => tweet4.key, :count => 10)
+    list.length.should == 3
+    
+    list[0].message[:body].should == 'hello world! 3'
+    list[1].message[:body].should == 'hello world! 2'
+    list[2].message[:body].should == 'hello world! 1'
   end
 end

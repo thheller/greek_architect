@@ -25,22 +25,28 @@ module GreekArchitect
     
     module UUIDConverter
       def convert(value)
-        if value.is_a?(UUIDTools::UUID)
+        if value.is_a?(::UUID)
           return value
         elsif value.is_a?(::String) and value =~ /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
-          return UUIDTools::UUID.parse(value)
+          return ::UUID.parse(value)
         else
-          raise TypeError.new(UUIDTools::UUID, value)
+          raise TypeError.new(::UUID, value)
         end
       end
+
+      def incr(value)
+        value.succ
+      end      
       
       def decode(bytes)
-        ::UUIDTools::UUID.parse_raw(bytes)
+        ::UUID.from_raw_bytes(bytes)
       end
 
       def encode(value)
-        check_type!(::UUIDTools::UUID, value)
-        value.raw
+        return value if value == ''
+        
+        check_type!(::UUID, value)
+        value.raw_bytes
       end
     end
     
@@ -48,18 +54,8 @@ module GreekArchitect
       include UUIDConverter
       register_as :time_uuid, 'org.apache.cassandra.db.marshal.TimeUUIDType'
 
-      def min_value()
-        ::UUIDTools::UUID.timestamp_create(Time.at(0))
-      end
-
-      # FIXME: precision? 
-      def incr(value)
-        timestamp = value.timestamp
-        ::UUIDTools::UUID.timestamp_create(timestamp + 0.00001)
-      end
-      
       def new_instance()
-        ::UUIDTools::UUID.timestamp_create()
+        ::UUID.create_v1_faster()
       end
     end 
     
@@ -72,7 +68,7 @@ module GreekArchitect
       register_as :guid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
 
       def new_instance()
-        ::UUIDTools::UUID.random_create()
+        ::UUID.create_v4
       end
     end
     

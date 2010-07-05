@@ -97,16 +97,21 @@ module GreekArchitect
       list.empty? ? -1 : list[0].timestamp
     end
     
-    def each
-      current_start = @config.compare_with.min_value
-      batch_size = 5
+    # walk in batches since thrift doesnt support streaming and transfering 100.000 cols at once kinda sux
+    def each(opts = {})
+      current_start = opts[:start] || ''
+      finish = opts[:finish] || ''
+      batch_size = opts[:batch_size] || 100
       
-      while (list = slice(:start => current_start, :count => batch_size)) and not list.empty?
+      while list = slice(:start => current_start, :finish => finish, :count => batch_size)
         list.each do |it|
           yield(it)
-          
-          current_start = @config.compare_with.incr(it.name)
         end
+        
+        # batch wasnt full, so we are done
+        break if list.length < batch_size
+        
+        current_start = @config.compare_with.incr(list[-1].name)
       end
     end
 

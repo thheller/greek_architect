@@ -36,7 +36,6 @@ to storage-conf.xml
 Run
 
 gem install thrift
-gem install uuidtools
 gem install msgpack
 gem install json
 gem install rspec --pre

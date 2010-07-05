@@ -1,6 +1,7 @@
 *.tmproj
 *.log
 
+prof/*
 .autotest
 autotest/*
 coverage/*

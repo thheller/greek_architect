@@ -56,14 +56,6 @@ module GreekArchitect
       end
     end
     
-    def min_value()
-      if wrapper.respond_to?(:min_value)
-        wrapper.min_value()
-      else
-        raise ArgumentError, "#{@greek_type.ruby_type} does not support min_value, each not supported, use slice"
-      end
-    end
-    
     def convert(value)
       if value.nil?
         wrapper.new_instance()

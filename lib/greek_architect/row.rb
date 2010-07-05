@@ -58,6 +58,13 @@ module GreekArchitect
 
       @client = client
       @key = key || @row_config.key_type.new_instance()
+      @column_family_instances = {}
+    end
+    
+    def column_family(name)
+      @column_family_instances[name] ||= begin
+        ColumnFamily.new(greek_architect_row, greek_architect_row_config.column_family(name))
+      end      
     end
     
     def key; @key; end
