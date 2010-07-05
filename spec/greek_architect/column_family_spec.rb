@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/../spec_helper'
 
 describe GreekArchitect::ColumnFamily do
   before(:each) do
-    @client = GreekArchitect::Client.new('TwitterSpec', ['127.0.0.1:9160'])
+    @client = GreekArchitect::Client.new('GreekTest', ['127.0.0.1:9160'])
     @row_config = GreekArchitect::RowConfig.new('User')
     @row_config.key_type = GreekArchitect::Types::UUIDv4.new()
     @column_family = @row_config.column_family(:profile)

@@ -151,7 +151,6 @@ module GreekArchitect
     def get(column_name, consistency_level = nil)
       column_wrapper(column_name)
     end
- 
 
     def column_wrapper(column_name)
       @columns[column_name] ||= begin

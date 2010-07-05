@@ -9,3 +9,7 @@ end
 task :find_all_files do
   p Dir['lib/**/**.rb'].sort
 end
+
+task :rcov do
+  system("rcov -x gems -x spec #{Dir['spec/**/**spec.rb'].sort.join(" ")}")
+end

@@ -300,7 +300,19 @@ class UUID
       # mac_addr doesnt really matter since timestamp is all we compare anyways
       ::UUID.create_v1_faster(timestamp + 0.00001, mac_addr)
     else
-      ::UUID.parse(to_s.succ)
+      # "b80bd95e-2f71-45e0-97f3-684f13f230ff".succ -> "b80bd95e-2f71-45e0-97f3-684f13f230fg"
+      # so just keep increasing the bytes till one doesnt run over
+      # im a math noob, this should be simpler somehow
+      bytes = raw_bytes.dup
+      idx = -1
+      bytes[idx] = bytes[idx].succ
+      
+      while bytes[idx] == 0
+        idx -= 1
+        bytes[idx] = bytes[idx].succ
+      end
+      
+      ::UUID.from_raw_bytes(bytes)
     end
   end
 

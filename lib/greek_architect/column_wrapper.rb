@@ -71,20 +71,20 @@ module GreekArchitect
       self
     end
     
-    def delete!
-      @previous_value = @value
-      @value = nil
-      @timestamp = @row.client.timestamp
-
-      @row.client.current_mutation.append_delete(self)
+    def delete!(timestamp = nil)
+      set_value(nil, timestamp)
     end
     
     def set_value(value, timestamp = nil)
+      @timestamp = timestamp || @row.client.timestamp
       assign_value(value)
       
-      @timestamp = timestamp || @row.client.timestamp
-
-      @row.client.current_mutation.append_insert(self)
+      if value.nil?
+        @value_raw = nil
+        @row.client.current_mutation.append_delete(self)
+      else
+        @row.client.current_mutation.append_insert(self)
+      end
       
       self
     end
@@ -144,7 +144,7 @@ module GreekArchitect
       @value = value
 
       begin
-        @value_raw = value_type.encode(value)
+        @value_raw = value_type.encode(value) if value
       rescue TypeError => err
         raise "Failed to encode value for #{@row.class}.#{@column_family.name} column: #{err.message}"
       end

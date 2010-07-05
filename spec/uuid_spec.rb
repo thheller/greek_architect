@@ -21,16 +21,28 @@ describe ::UUID do
   
   it "should create v1 successors properly" do
     u1 = ::UUID.create_v1_faster
-    u2 = u1.succ
     
-    u1.timestamp.should < u2.timestamp
+    current = u1
+    # only incrementing a float, which shouldnt run over anytime soon
+    10.times do
+      u2 = current.succ
+      current.should < u2
+      current = u2
+    end
   end
   
   it "should create v4 successors properly" do
     u1 = ::UUID.create_v4
-    u2 = u1.succ
     
-    u1.should < u2
+    current = u1
+    # (255*255) takes too long ;)
+    # make sure '00ff' -> '0100' and not '00fg'
+    1000.times do
+      u2 = current.succ
+      current.should < u2
+      current = u2
+    end
+    
   end
   
   it "should extract mac_addrs for v1" do
