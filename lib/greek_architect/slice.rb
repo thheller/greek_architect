@@ -46,6 +46,7 @@ module GreekArchitect
       result
     end
 
+    def empty?; @columns.empty?; end
     def row; @column_family.row; end
     def first; @columns.first; end
     def last; @columns.last; end
