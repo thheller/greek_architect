@@ -18,9 +18,9 @@ class User < GreekArchitect::Row
     opts[:reversed] = true unless opts.has_key?(:reversed)
     
     list = timeline.slice(opts)
-    list.collect do |col|
-      Tweet.get(col.value)
-    end
+    tweet_ids = list.values
+    
+    Tweet.multiget_slice(tweet_ids, :message, :names => [:body, :created_at, :created_by])
   end
   
   def follow!(user)

@@ -60,4 +60,51 @@ describe TestRow do
     row.simple_hash[:test1].should == nil
     row.simple_hash.slice().length == 0
   end
+  
+  it "should get multiple row slices with ranges" do
+    row1 = create_row()
+    row2 = create_row()
+    row3 = create_row()
+    
+    list = TestRow.multiget_slice([row1.key, row2.key, row3.key], :simple_hash, :start => :test2, :count => 1)
+
+    GreekArchitect::runtime.client.should_not_receive(:thrift_call)
+
+    list.length.should == 3
+    list[0].row.key.should == row1.key
+    list[1].row.key.should == row2.key
+    list[2].row.key.should == row3.key
+    
+    list.each do |x|
+      x.should be_an_instance_of(GreekArchitect::Slice)
+      x.row.should be_an_instance_of(TestRow)
+      x.length.should == 1
+      x[:test2].should == 'value2'
+    end
+  end
+  
+  it "should get multiple row slices with names" do
+    row1 = create_row()
+    row2 = create_row()
+    row3 = create_row()
+    
+    list = TestRow.multiget_slice([row1.key, row2.key, row3.key], :simple_hash, :names => [:test1, :test3])
+
+    GreekArchitect::runtime.client.should_not_receive(:thrift_call)
+
+    list.length.should == 3
+    list[0].row.key.should == row1.key
+    list[1].row.key.should == row2.key
+    list[2].row.key.should == row3.key
+    
+    list.each do |x|
+      x.should be_an_instance_of(GreekArchitect::Slice)
+      x.row.should be_an_instance_of(TestRow)
+      x.length.should == 2
+      x.names.should == [:test1, :test3]
+      x[:test1].should == 'value1'
+      x[:test2].should == nil
+      x[:test3].should == 'value3'
+    end
+  end
 end

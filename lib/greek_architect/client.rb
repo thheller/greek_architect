@@ -86,6 +86,43 @@ module GreekArchitect
             translate_consistency_level(consistency_level || read_consistency_level))
       end
     end
+    
+    def multiget_slice(keys, column_family, opts)
+      consistency_level = translate_consistency_level(opts[:consistency] || read_consistency_level)
+      
+      column_parent = CassandraThrift::ColumnParent.new(
+        :column_family => column_family.cassandra_name
+      )
+      
+      predicate = CassandraThrift::SlicePredicate.new()
+      
+      if names = opts[:names]
+        predicate.column_names = names.collect { |it| column_family.compare_with.encode(it) }
+      else
+        start = if x = opts[:start]
+          column_family.compare_with.encode(x)
+        else
+          ''
+        end
+      
+        finish = if x = opts[:finish]
+          column_family.compare_with.encode(x)
+        else
+          ''
+        end
+
+        predicate.slice_range = CassandraThrift::SliceRange.new(
+            :start => start,
+            :finish => finish,
+            :reversed => opts[:reversed] || false,
+            :count => opts[:count] || 100 # TODO: whats a reasonable default here?
+        )
+      end
+      
+      thrift_call do |t|
+        t.multiget_slice(@keyspace, keys.collect(&:to_s), column_parent, predicate, consistency_level)
+      end
+    end
   
     def get_slice(row, column_family, opts)
       start = if x = opts[:start]

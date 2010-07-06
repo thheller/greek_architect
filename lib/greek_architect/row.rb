@@ -112,6 +112,27 @@ module GreekArchitect
       
       x
     end
+    
+    def multiget_slice(keys, column_family, slice_opts = {})
+      runtime = GreekArchitect::Runtime.instance
+      client = runtime.client
+      
+      row_config = runtime.get_row_config(self)
+      cf_config = row_config.column_family(column_family)
+      
+      result = {}
+      map = client.multiget_slice(keys, cf_config, slice_opts)
+      map.each do |k, cols|
+        slice = get(k).column_family(column_family).new_slice()
+        cols.each do |col|
+          slice.append(col.column.name, col.column.value, col.column.timestamp)
+        end
+        
+        result[slice.row.key] = slice
+      end
+      
+      keys.collect { |it| result[it] }
+    end
   end
   
   module RowHelperClassMethods

@@ -64,7 +64,35 @@ describe GreekArchitect::ColumnFamily do
       end
       
       each_names.should == names[0, 5]
+    end
+  end
+  
+  context ".slice" do
+    it "should return slices of the data" do
+
+      profile = @row.column_family(:profile)
+      profile.should be_an_instance_of(GreekArchitect::ColumnFamily)
       
+      @row.mutate do
+        profile.insert('test4', 1)
+        profile.insert('test1', 1)
+        profile.insert('test8', 1)
+        profile.insert('test2', 1)
+        profile.insert('test7', 1)
+        profile.insert('test3', 1)
+        profile.insert('test5', 1)
+        profile.insert('test9', 1)
+        profile.insert('test6', 1)
+      end
+      
+      slice = profile.slice(:count => 5)
+      slice.should be_an_instance_of(GreekArchitect::Slice)
+      hash = slice.as_hash
+      hash['test1'].should == 1
+      hash['test2'].should == 1
+      hash['test3'].should == 1
+      hash['test4'].should == 1
+      hash['test5'].should == 1
     end
   end
 end

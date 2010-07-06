@@ -55,8 +55,8 @@ describe 'Twitter' do
     list = fanboi.timeline_tweets(:start => tweet4.key, :count => 10)
     list.length.should == 3
     
-    list[0].message[:body].should == 'hello world! 3'
-    list[1].message[:body].should == 'hello world! 2'
-    list[2].message[:body].should == 'hello world! 1'
+    list[0][:body].should == 'hello world! 3'
+    list[1][:body].should == 'hello world! 2'
+    list[2][:body].should == 'hello world! 1'
   end
 end

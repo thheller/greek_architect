@@ -60,6 +60,8 @@ module GreekArchitect
       @columns = {}
     end
     
+    attr_reader :row, :config
+    
     def inspect
       "<ColumnFamily:#{object_id}-#{@config.cassandra_name} @columns=#{@columns.inspect}>"
     end
@@ -75,21 +77,18 @@ module GreekArchitect
       @row.client.get_count(@row, @config, consistency_level)
     end
     
-    def hash_slice(opts = {})
-      result = {}
-      slice(opts).each do |col|
-        result[col.name] = col.value
-      end
-      result
+    def new_slice()
+      s = Slice.new(self)
     end
 
     def slice(opts = {})      
-      @row.client.get_slice(@row, @config, opts).collect do |it|
-        col = ColumnWrapper.new(@row, @config)
-        col.load_raw_values(it.column.name, it.column.value, it.column.timestamp)
-        @columns[col.name] = col
-        col
+      s = new_slice()
+      
+      @row.client.get_slice(@row, @config, opts).each do |it|
+        s.append(it.column.name, it.column.value, it.column.timestamp)
       end
+      
+      s
     end
     
     def last_timestamp
@@ -111,7 +110,7 @@ module GreekArchitect
         # batch wasnt full, so we are done
         break if list.length < batch_size
         
-        current_start = @config.compare_with.incr(list[-1].name)
+        current_start = @config.compare_with.incr(list.last.name)
       end
     end
 
@@ -151,8 +150,7 @@ module GreekArchitect
     def get(column_name, consistency_level = nil)
       column_wrapper(column_name)
     end
- 
-
+    
     def column_wrapper(column_name)
       @columns[column_name] ||= begin
         value_type = @config.named_columns[column_name] || @config.value_type

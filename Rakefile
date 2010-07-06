@@ -13,3 +13,10 @@ end
 task :rcov do
   system("rcov -x gems -x spec #{Dir['spec/**/**spec.rb'].sort.join(" ")}")
 end
+
+task :default => [:test] do
+end
+
+task :test do
+  system("rspec spec examples/twitter")
+end
