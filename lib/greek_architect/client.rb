@@ -241,6 +241,15 @@ module GreekArchitect
       @socket.close
     end
     
+    def spy!
+      @orig_thrift = @thrift
+      @thrift = Spy.new(@thrift)
+    end
+    
+    def unspy!
+      @thrift = @orig_thrift
+    end
+    
     protected
     
     def connect_to_server!
