@@ -93,7 +93,7 @@ module GreekArchitect
     
     def last_timestamp
       list = slice(:reversed => true, :count => 1)
-      list.empty? ? -1 : list[0].timestamp
+      list.empty? ? -1 : list.first.timestamp
     end
     
     # walk in batches since thrift doesnt support streaming and transfering 100.000 cols at once kinda sux
