@@ -62,13 +62,26 @@ module GreekArchitect
     # aka random
     class UUIDv4 < AbstractType
       include UUIDConverter
-
-      register_as :uuid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
       register_as :uuid_v4, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
-      register_as :guid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
+
 
       def new_instance()
         ::UUID.create_v4
+      end
+    end
+    
+    class UUIDv5 < AbstractType
+      include UUIDConverter
+
+      register_as :uuid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
+      register_as :guid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
+      
+      def initialize()
+        @ns = UUID::create_v1_faster
+      end
+      
+      def new_instance()
+        ::UUID.create_sha1([Time.now.to_f, rand()].join(""), @ns)
       end
     end
     

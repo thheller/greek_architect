@@ -279,6 +279,8 @@ module GreekArchitect
     end
     
     def spy!
+      return if @thrift.is_a?(Spy)
+      
       @orig_thrift = @thrift
       @thrift = Spy.new(@thrift)
     end
