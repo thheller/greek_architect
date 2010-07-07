@@ -75,7 +75,9 @@ module GreekArchitect
       register_as :uuid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
       register_as :guid, 'org.apache.cassandra.db.marshal.LexicalUUIDType'
       
-      def initialize()
+      def initialize(opts = {})
+        super(opts)
+        
         @ns = UUID::create_v1_faster
       end
       
