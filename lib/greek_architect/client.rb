@@ -53,7 +53,15 @@ module GreekArchitect
       @schema ||= begin
         thrift_call { |t| t.describe_keyspace(@keyspace) }
       end
-    end   
+    end
+    
+    def describe_ring()
+      thrift_call { |t| t.describe_ring(@keyspace) }      
+    end
+    
+    def describe_splits(start_token, end_token, keys_per_split)
+      thrift_call { |t| t.describe_splits(start_token.to_s, end_token.to_s, keys_per_split) }
+    end
     
     def read_consistency_level
       :one
@@ -87,13 +95,7 @@ module GreekArchitect
       end
     end
     
-    def multiget_slice(keys, column_family, opts)
-      consistency_level = translate_consistency_level(opts[:consistency] || read_consistency_level)
-      
-      column_parent = CassandraThrift::ColumnParent.new(
-        :column_family => column_family.cassandra_name
-      )
-      
+    def slice_predicate(column_family, opts)
       predicate = CassandraThrift::SlicePredicate.new()
       
       if names = opts[:names]
@@ -119,38 +121,51 @@ module GreekArchitect
         )
       end
       
+      predicate
+    end
+    
+    def get_range_slices(column_family, start_token, end_token, count, slice_opts = {})
+      consistency_level = translate_consistency_level(slice_opts[:consistency] || read_consistency_level)
+      
+      column_parent = CassandraThrift::ColumnParent.new(
+        :column_family => column_family.cassandra_name
+      )
+      
+      key_range = CassandraThrift::KeyRange.new(
+        :start_token => start_token.to_s,
+        :end_token => end_token.to_s,
+        :count => count
+      )
+      
+      predicate = slice_predicate(column_family, slice_opts)
+      
       thrift_call do |t|
-        t.multiget_slice(@keyspace, keys.collect(&:to_s), column_parent, predicate, consistency_level)
+        t.get_range_slices(@keyspace, column_parent, predicate, key_range, consistency_level)
       end
     end
-  
-    def get_slice(row, column_family, opts)
-      start = if x = opts[:start]
-        column_family.compare_with.encode(x)
-      else
-        ''
-      end
-      
-      finish = if x = opts[:finish]
-        column_family.compare_with.encode(x)
-      else
-        ''
-      end
-      
+    
+    def multiget_slice(keys, column_family, opts)
       consistency_level = translate_consistency_level(opts[:consistency] || read_consistency_level)
       
       column_parent = CassandraThrift::ColumnParent.new(
         :column_family => column_family.cassandra_name
       )
       
-      predicate = CassandraThrift::SlicePredicate.new(
-        :slice_range => CassandraThrift::SliceRange.new(
-          :start => start,
-          :finish => finish,
-          :reversed => opts[:reversed] || false,
-          :count => opts[:count] || 100 # TODO: whats a reasonable default here?
-        )
+      predicate = slice_predicate(column_family, opts)
+      
+      thrift_call do |t|
+        t.multiget_slice(@keyspace, keys.collect(&:to_s), column_parent, predicate, consistency_level)
+      end
+    end
+  
+    def get_slice(row, column_family, opts)      
+      consistency_level = translate_consistency_level(opts[:consistency] || read_consistency_level)
+      
+      column_parent = CassandraThrift::ColumnParent.new(
+        :column_family => column_family.cassandra_name
       )
+      
+      predicate = slice_predicate(column_family, opts)
       
       thrift_call do |t|
         t.get_slice(@keyspace, row.key.to_s, column_parent, predicate, consistency_level)
@@ -162,43 +177,6 @@ module GreekArchitect
       thrift_call do |t|
         t.batch_mutate(@keyspace, mutation_map, translate_consistency_level(consistency_level))
       end
-    end
-    
-    def generate_mutation_map(mutations)
-      mutation_map = {}
-
-      mutations.each do |mutation|
-        x = mutation_map[mutation.column.row.key.to_s] ||= {}
-        y = x[mutation.column.column_family.cassandra_name] ||= []
-
-        thrift_mutation = case mutation.action
-        when :insert
-          CassandraThrift::Mutation.new(
-            :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
-              :column => CassandraThrift::Column.new(
-                :name => mutation.column.name_raw,
-                :value => mutation.column.value_raw,
-                :timestamp => mutation.column.timestamp || timestamp
-              )
-            )
-          )
-        when :delete
-          CassandraThrift::Mutation.new(
-            :deletion => CassandraThrift::Deletion.new(
-              :predicate => CassandraThrift::SlicePredicate.new(
-                :column_names => [mutation.column.name_raw]
-                ),
-              :timestamp => mutation.column.timestamp || timestamp
-            )
-          )
-        else
-          raise "dunno how to do #{mutation.inspect}"
-        end
-
-        y << thrift_mutation
-      end
-
-      mutation_map
     end
     
     def delete_everything!
@@ -223,7 +201,7 @@ module GreekArchitect
          key_range = CassandraThrift::KeyRange.new(
            :start_key => '',
            :end_key => '',
-           :count => 10000
+           :count => 1000000
            # FIXME: this is really bad!
          )
         
@@ -236,6 +214,16 @@ module GreekArchitect
             end
           end
         end        
+      end
+    end
+    
+    def remove(key, column_family)
+      column_path = CassandraThrift::ColumnPath.new(
+        :column_family => column_family.cassandra_name
+      )
+
+      thrift_call do |t|
+        t.remove(@keyspace, key.to_s, column_path, timestamp, CassandraThrift::ConsistencyLevel::ONE)
       end
     end
 
@@ -289,24 +277,6 @@ module GreekArchitect
       @thrift = @orig_thrift
     end
     
-    protected
-    
-    def connect_to_server!
-      @current_server = @servers[rand(@servers.length)]
-      host, port = @current_server.split(/:/)
-      
-      @socket = Thrift::Socket.new(host, port)
-      @transport = Thrift::BufferedTransport.new(@socket)
-
-      if not @transport.open
-        raise 'connection failed'
-      end      
-
-      @protocol = Thrift::BinaryProtocol.new(@transport)
-
-      @thrift = CassandraThrift::Cassandra::Client.new(@protocol)
-    end
-    
     def thrift_call 
       begin        
         connect_to_server! if not (@socket and @socket.open?)
@@ -323,5 +293,60 @@ module GreekArchitect
         raise
       end
     end    
+    
+    protected
+    
+    def generate_mutation_map(mutations)
+      mutation_map = {}
+
+      mutations.each do |mutation|
+        x = mutation_map[mutation.column.row.key.to_s] ||= {}
+        y = x[mutation.column.column_family.cassandra_name] ||= []
+
+        thrift_mutation = case mutation.action
+        when :insert
+          CassandraThrift::Mutation.new(
+            :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
+              :column => CassandraThrift::Column.new(
+                :name => mutation.column.name_raw,
+                :value => mutation.column.value_raw,
+                :timestamp => mutation.column.timestamp || timestamp
+              )
+            )
+          )
+        when :delete
+          CassandraThrift::Mutation.new(
+            :deletion => CassandraThrift::Deletion.new(
+              :predicate => CassandraThrift::SlicePredicate.new(
+                :column_names => [mutation.column.name_raw]
+                ),
+              :timestamp => mutation.column.timestamp || timestamp
+            )
+          )
+        else
+          raise "dunno how to do #{mutation.inspect}"
+        end
+
+        y << thrift_mutation
+      end
+
+      mutation_map
+    end    
+    
+    def connect_to_server!
+      @current_server = @servers[rand(@servers.length)]
+      host, port = @current_server.split(/:/)
+      
+      @socket = Thrift::Socket.new(host, port)
+      @transport = Thrift::BufferedTransport.new(@socket)
+
+      if not @transport.open
+        raise 'connection failed'
+      end      
+
+      @protocol = Thrift::BinaryProtocol.new(@transport)
+
+      @thrift = CassandraThrift::Cassandra::Client.new(@protocol)
+    end
   end
 end

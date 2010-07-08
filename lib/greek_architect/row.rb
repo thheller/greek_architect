@@ -113,6 +113,16 @@ module GreekArchitect
       x
     end
     
+    def remove!(key, column_family)
+      runtime = GreekArchitect::Runtime.instance
+      client = runtime.client
+      
+      row_config = runtime.get_row_config(self)
+      cf_config = row_config.column_family(column_family)
+
+      client.remove(key, cf_config)
+    end
+    
     def multiget_slice(keys, column_family, slice_opts = {})
       runtime = GreekArchitect::Runtime.instance
       client = runtime.client
@@ -132,6 +142,69 @@ module GreekArchitect
       end
       
       keys.collect { |it| result[it] }
+    end
+    
+    def each_slice(column_family, slice_opts = {})
+      runtime = GreekArchitect::Runtime.instance
+      client = runtime.client
+      
+      row_config = runtime.get_row_config(self)
+      cf_config = row_config.column_family(column_family)
+      
+      path_to_java = File.expand_path(File.dirname(__FILE__) + '/../../java')
+      tkn_convert = IO.popen("/usr/bin/env java -cp #{path_to_java} KeyToToken", "r+")
+      
+      split_size = 5000
+      batch_size = 1000
+      
+      # basically do what the hadoop/pig stuff does
+      # 
+      token_ranges = client.describe_ring()      
+      token_ranges.each do |token_range|
+
+        splits = client.describe_splits(token_range.start_token, token_range.end_token, split_size)
+
+        x = 0
+        while x < splits.length - 1
+          start_token = splits[x]
+          end_token = splits[x+1]
+          x += 1
+          
+          while true
+            list = client.get_range_slices(cf_config, start_token, end_token, batch_size, slice_opts)
+
+            list.each do |thrift_slice|
+              if not thrift_slice.columns.empty?
+                slice = get(thrift_slice.key).column_family(column_family).new_slice()
+                thrift_slice.columns.each do |col|
+                  slice.append(col.column.name, col.column.value, col.column.timestamp)
+                end   
+              
+                yield(slice)
+              end
+            end
+            
+            break if list.length < batch_size           
+            
+            start_token = token_for_key(tkn_convert, list.last.key)
+          end
+        end
+      end
+      
+      tkn_convert.close
+    end
+    
+    def token_for_key(tkn_convert, key)
+      tkn_convert.puts(key)
+      tkn_convert.gets().strip
+      
+      # d = Digest::MD5.new()
+      # d.update(key)
+      # bytes = d.digest().unpack('C*')
+      # bytes.inject { |r, i| (r << 8) | i }.abs
+      
+      # produces different tokens than the java version
+      # must be something wrong but I'm a math noob and cant figure it out
     end
   end
   

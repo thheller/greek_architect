@@ -16,6 +16,7 @@ describe TestRow do
       'keyspace' => 'GreekTest',
       'servers' => ['127.0.0.1:9160']
     })
+    
   end
   
   def create_row()
@@ -67,9 +68,9 @@ describe TestRow do
     row3 = create_row()
     
     list = TestRow.multiget_slice([row1.key, row2.key, row3.key], :simple_hash, :start => :test2, :count => 1)
-
+  
     GreekArchitect::runtime.client.should_not_receive(:thrift_call)
-
+  
     list.length.should == 3
     list[0].row.key.should == row1.key
     list[1].row.key.should == row2.key
@@ -89,9 +90,9 @@ describe TestRow do
     row3 = create_row()
     
     list = TestRow.multiget_slice([row1.key, row2.key, row3.key], :simple_hash, :names => [:test1, :test3])
-
+  
     GreekArchitect::runtime.client.should_not_receive(:thrift_call)
-
+  
     list.length.should == 3
     list[0].row.key.should == row1.key
     list[1].row.key.should == row2.key
@@ -105,6 +106,35 @@ describe TestRow do
       x[:test1].should == 'value1'
       x[:test2].should == nil
       x[:test3].should == 'value3'
+    end
+  end
+
+  it "should be able to iterate over all rows" do
+    GreekArchitect::runtime.client.delete_everything!
+    
+    value = 0
+    100.times do
+      TestRow.create() do |row|
+        row.simple_hash[:value] = (value += 1)
+      end
+    end
+    
+    count = 0
+    keys = []
+    values = []
+    
+    TestRow.each_slice(:simple_hash, :names => [:value]) do |slice|
+      count += 1
+      
+      keys << slice.row.key.to_s
+      values << slice[:value]
+    end
+    
+    keys.uniq.length.should == 100
+    values.uniq.length.should == 100
+     
+    keys.each do |key|
+      TestRow.remove!(key, :simple_hash)
     end
   end
 end

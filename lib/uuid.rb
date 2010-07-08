@@ -45,6 +45,7 @@
 
 require 'digest/md5'
 require 'digest/sha1'
+require 'thread' # for Mutex
 require 'tmpdir'
 
 # Pure ruby UUID generator, which is compatible with RFC4122
