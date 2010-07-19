@@ -50,6 +50,7 @@ module GreekArchitect
 end
 
 require 'greek_architect/runtime'
+require 'greek_architect/thrift_adapter'
 require 'greek_architect/client'
 require 'greek_architect/column_family'
 require 'greek_architect/row'

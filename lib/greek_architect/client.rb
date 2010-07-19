@@ -38,8 +38,16 @@ module GreekArchitect
   class Client
     def initialize(keyspace, servers)
       @servers = servers
+      
+      @thrifts = []
 
-      connect_to_server!
+      @servers.each do |it|
+        @thrifts << ThriftAdapter.new(self, it)
+      end
+      
+      @thrifts.shuffle!
+      
+      @spying = false
       
       @keyspace = keyspace
       @current_mutation = nil
@@ -262,36 +270,54 @@ module GreekArchitect
     end
     
     def disconnect!
-      @transport.close
-      @socket.close
+      @thrifts.each do |it|
+        it.disconnect!
+      end
     end
     
     def spy!
-      return if @thrift.is_a?(Spy)
-      
-      @orig_thrift = @thrift
-      @thrift = Spy.new(@thrift)
+      @spying = true
     end
     
     def unspy!
-      @thrift = @orig_thrift
+      @spying = false
     end
     
     def thrift_call 
-      begin        
-        connect_to_server! if not (@socket and @socket.open?)
+      tries = 0
+
+      until tries > 10
+
+        available_clients = @thrifts.dup
+
+        until available_clients.empty?        
+          tries += 1
+
+          rand_client = available_clients.shift
+          begin
+            rand_client.connect!
+
+            result = yield(rand_client.thrift)
+            
+            rand_client.success!
+            
+            return result
+          
+          rescue Thrift::TransportException,
+                 CassandraThrift::TimedOutException,
+                 CassandraThrift::UnavailableException => err
+          
+            rand_client.handle_error(err)
+            next
         
-        yield(@thrift)
-      
-      rescue Thrift::TransportException => err
-        @socket.close
-        puts "caught Thrift::TransportException, retrying"
-        retry
-        
-      rescue
-        puts "THRIFT_INTERCEPT! #{$!.class} - #{$!.message}"
-        raise
+          rescue
+            puts "THRIFT_INTERCEPT! #{$!.class} - #{$!.message}"
+            raise
+          end
+        end
       end
+      
+      raise 'no server completed your request!'
     end    
     
     protected
@@ -332,21 +358,5 @@ module GreekArchitect
 
       mutation_map
     end    
-    
-    def connect_to_server!
-      @current_server = @servers[rand(@servers.length)]
-      host, port = @current_server.split(/:/)
-      
-      @socket = Thrift::Socket.new(host, port)
-      @transport = Thrift::BufferedTransport.new(@socket)
-
-      if not @transport.open
-        raise 'connection failed'
-      end      
-
-      @protocol = Thrift::BinaryProtocol.new(@transport)
-
-      @thrift = CassandraThrift::Cassandra::Client.new(@protocol)
-    end
   end
 end
