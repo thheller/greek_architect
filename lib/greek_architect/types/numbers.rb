@@ -34,7 +34,7 @@ module GreekArchitect
       register_as :long, 'org.apache.cassandra.db.marshal.LongType'
       
       def decode(bytes)
-        raise ArgumentError, 'Long should be 8 bytes' unless bytes.length == 8
+        raise ArgumentError, 'Long must be 8 bytes' unless bytes.length == 8
         
         bytes.unpack('Q').first
       end

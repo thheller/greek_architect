@@ -1,5 +1,6 @@
 *.tmproj
 *.log
+.idea/*
 
 prof/*
 .autotest
