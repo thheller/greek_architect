@@ -42,7 +42,7 @@ module GreekArchitect
       @thrifts = []
 
       @servers.each do |it|
-        @thrifts << ThriftAdapter.new(self, it)
+        @thrifts << ThriftAdapter.new(it)
       end
       
       @thrifts.shuffle!

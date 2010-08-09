@@ -1,8 +1,7 @@
 module GreekArchitect
   
   class ThriftAdapter
-    def initialize(client, server)
-      @client = client      
+    def initialize(server)
       @server = server
       
       @successful_calls = 0
@@ -28,7 +27,7 @@ module GreekArchitect
         host, port = @server.split(/:/)
 
         @socket = Thrift::Socket.new(host, port)
-        @transport = Thrift::BufferedTransport.new(@socket)
+        @transport = Thrift::FramedTransport.new(@socket)
         
         @transport.open
 

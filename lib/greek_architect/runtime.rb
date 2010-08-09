@@ -75,12 +75,48 @@ module GreekArchitect
       
       wrapper.decode(value)
     end
-  end  
+  end
+  
+  class ConfigBuilder
+    def initialize()
+      @scope = []
+    end
+    
+    def describe_cluster(name)
+      @scope << ClusterBuilder.new(name)
+      
+      yield()
+    end
+    
+    def method_missing(m, *args)
+      current_target = @scope.last
+      if current_target.respond_to?(m)
+        @scope.last.send(m, *args)
+      else
+        raise "#{current_target.class} does not respond to #{m}"
+      end
+    end
+  end
+  
+  class ClusterBuilder
+    def initialize(name)
+      @name = name
+      @keyspaces = []
+    end
+    
+    def server(addr)
+      @servers << addr
+    end
+  end
   
   class Runtime
     class << self
       def instance()
         @@runtime ||= Runtime.new()
+      end
+      
+      def method_missing(m, *args)
+        instance.send(m, *args)
       end
       
       protected :new
@@ -95,7 +131,12 @@ module GreekArchitect
       @keyspace = nil
     end
     
-    def configure(options)
+    def configure(config)
+      
+      cb = ConfigBuilder.new()
+      cb.instance_eval(File.read(config))
+      p cb
+      raise 'boom'
       disconnect!
       
       if options.nil? or options.empty?

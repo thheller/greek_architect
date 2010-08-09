@@ -7,10 +7,10 @@ describe 'Twitter' do
       'keyspace' => 'TwitterSpec',
       'servers' => ['127.0.0.1:9160']
     })
-    
   end
   
   it "should work" do
+        
     user = User.create()
     user.mutate do
       user.profile[:name] = 'zilence'
