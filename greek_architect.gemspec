@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
   s.name        = 'greek_architect'
   s.version     = '0.1.0'
   s.authors     = ["Thomas Heller"]
-  s.description = 'experimental Cassandra Client'
+  s.description = 'experimental Cassandra Client (targets Cassandra 0.6 for now)'
   s.summary     = "http://github.com/thheller/greek_architect"
   s.email       = 'info@zilence.net'
   s.homepage    = s.summary
