@@ -129,7 +129,7 @@ module GreekArchitect
     def get_row_config(klass)
       raise 'not a class' unless klass.is_a?(Class)
       
-      @row_configs[klass.to_s] ||= RowConfig.new(klass.to_s)
+      @row_configs[klass.to_s] ||= RowConfig.new(klass.to_s.split(/::/).last)
     end
     
     def get_type_by_name(typename)
