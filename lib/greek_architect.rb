@@ -27,9 +27,9 @@ require 'msgpack'
 require 'json'
 require 'uuid'
 
-require 'cassandra-thrift/0.7/gen-rb/cassandra_constants'
-require 'cassandra-thrift/0.7/gen-rb/cassandra_types'
-require 'cassandra-thrift/0.7/gen-rb/cassandra'
+require 'greek_architect/gen-rb/cassandra_constants'
+require 'greek_architect/gen-rb/cassandra_types'
+require 'greek_architect/gen-rb/cassandra'
 
 module GreekArchitect
   class AlreadyMutating < StandardError

@@ -3,8 +3,11 @@ require File.dirname(__FILE__) + '/user_model.rb'
 
 describe User do
   
-  before(:each) do  
-    GreekArchitect::Runtime.configure(File.dirname(__FILE__) + "/demo_schema.rb")
+  before(:each) do
+    GreekArchitect::runtime.configure({
+      'keyspace' => 'GreekArchitectByExample',
+      'servers' => ['127.0.0.1:9160']
+    })
   end
 
   it "should be simple to use" do
