@@ -130,8 +130,8 @@ describe TestRow do
       values << slice[:value]
     end
     
-    keys.uniq.length.should == 100
-    values.uniq.length.should == 100
+    keys.length.should == 100
+    values.length.should == 100
      
     keys.each do |key|
       TestRow.remove!(key, :simple_hash)
